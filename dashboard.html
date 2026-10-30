@@ -145,6 +145,12 @@
                 <h3>Аналитика тестирования</h3>
                 <p>Статистика прохождений тестов, результаты сотрудников, фильтры и отчёты.</p>
             </a>
+            <!-- Плитка 5: Реестр выдачи СИЗ (только admin/engineer) -->
+            <a href="siz-registry.html" class="card admin-only" id="card-siz">
+            <div class="card-icon">🦺</div>
+            <h3>Реестр выдачи СИЗ</h3>
+            <p>Учёт выдачи средств индивидуальной защиты, контроль сроков носки, фильтрация по организациям.</p>
+    </a>
 
             <!-- Заглушка -->
             <div class="card placeholder-card">
@@ -188,12 +194,13 @@
 
             document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || 'неизвестно'})`;
 
-            // Показываем плитки для admin и engineer
+                        // Показываем плитки для admin и engineer
             if (role === 'admin' || role === 'engineer') {
                 console.log('✅ Пользователь имеет роль admin или engineer');
                 
                 const cardControl = document.getElementById('card-control');
                 const cardAnalytics = document.getElementById('card-analytics');
+                const cardSiz = document.getElementById('card-siz'); // <-- ДОБАВЛЕНО
                 
                 if (cardControl) {
                     cardControl.style.display = 'block';
@@ -208,6 +215,15 @@
                 } else {
                     console.error('❌ Элемент card-analytics не найден!');
                 }
+
+                // <-- ДОБАВЛЕНО: Логика для плитки СИЗ
+                if (cardSiz) {
+                    cardSiz.style.display = 'block';
+                    console.log('✅ Показана плитка "Реестр выдачи СИЗ"');
+                } else {
+                    console.error('❌ Элемент card-siz не найден! Проверьте HTML.');
+                }
+
             } else {
                 console.log('⚠️ Пользователь не admin и не engineer, плитки скрыты');
             }
@@ -220,7 +236,6 @@
                     console.log('✅ Показана кнопка "Пользователи"');
                 }
             }
-        }
 
         window.handleLogout = async function() {
             await supabase.auth.signOut();
