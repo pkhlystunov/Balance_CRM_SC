@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Аналитика тестирования</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f6f9;
+            min-height: 100vh;
+        }
+        header {
+            background: #2c3e50;
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        header h1 { font-size: 1.5rem; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            text-decoration: none;
+            display: inline-block;
+            transition: background 0.3s;
+        }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        
+        .container {
+            padding: 2rem;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .filters {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 2rem;
+        }
+        .filters h3 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        .filter-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: end;
+        }
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+        .filter-group label {
+            font-size: 14px;
+            color: #555;
+            font-weight: 500;
+        }
+        .filter-group input,
+        .filter-group select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            min-width: 150px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .stat-card .number {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: #2c3e50;
+        }
+        .stat-card .label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .stat-card.success .number { color: #27ae60; }
+        .stat-card.danger .number { color: #e74c3c; }
+        
+        .employee-list {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .employee-item {
+            border-bottom: 1px solid #ecf0f1;
+        }
+        .employee-item:last-child {
+            border-bottom: none;
+        }
+        
+        .employee-header {
+            padding: 1rem 1.5rem;
+            background: #f8f9fa;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .employee-header:hover {
+            background: #e9ecef;
+        }
+        .employee-header .name {
+            font-weight: 600;
+            color: #2c3e50;
+            font-size: 1.1rem;
+        }
+        .employee-header .stats {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+        }
+        .employee-header .stat {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+        .stat.total { background: #e3f2fd; color: #1976d2; }
+        .stat.passed { background: #e8f5e9; color: #388e3c; }
+        .stat.failed { background: #ffebee; color: #c62828; }
+        
+        .employee-details {
+            display: none;
+            padding: 1rem 1.5rem;
+            background: white;
+        }
+        .employee-details.active {
+            display: block;
+        }
+        
+        .test-record {
+            padding: 0.8rem;
+            margin-bottom: 0.8rem;
+            border-left: 3px solid #ddd;
+            background: #fafafa;
+            border-radius: 4px;
+        }
+        .test-record.passed {
+            border-left-color: #27ae60;
+        }
+        .test-record.failed {
+            border-left-color: #e74c3c;
+        }
+        .test-record .date {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+            margin-bottom: 0.3rem;
+        }
+        .test-record .program {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 0.3rem;
+        }
+        .test-record .result {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .test-record .score {
+            font-size: 0.9rem;
+            color: #555;
+        }
+        .test-record .status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+        .status.passed { background: #27ae60; color: white; }
+        .status.failed { background: #e74c3c; color: white; }
+        
+        .toggle-icon {
+            transition: transform 0.3s;
+        }
+        .employee-header.active .toggle-icon {
+            transform: rotate(180deg);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>📊 Аналитика тестирования</h1>
+        <div class="header-actions">
+            <a href="dashboard.html" class="btn btn-secondary">← Назад</a>
+            <button class="btn btn-danger" onclick="handleLogout()">Выход</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="filters">
+            <h3>Фильтры</h3>
+            <div class="filter-row">
+                <div class="filter-group">
+                    <label>Поиск по ФИО</label>
+                    <input type="text" id="filterName" placeholder="Иванов...">
+                </div>
+                <div class="filter-group">
+                    <label>Программа</label>
+                    <select id="filterProgram">
+                        <option value="">Все программы</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Статус</label>
+                    <select id="filterStatus">
+                        <option value="">Все</option>
+                        <option value="passed">Прошли</option>
+                        <option value="failed">Не прошли</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>С даты</label>
+                    <input type="date" id="filterDateFrom">
+                </div>
+                <div class="filter-group">
+                    <label>По дату</label>
+                    <input type="date" id="filterDateTo">
+                </div>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="number" id="statTotal">0</div>
+                <div class="label">Всего тестирований</div>
+            </div>
+            <div class="stat-card success">
+                <div class="number" id="statPassed">0</div>
+                <div class="label">Прошли</div>
+            </div>
+            <div class="stat-card danger">
+                <div class="number" id="statFailed">0</div>
+                <div class="label">Не прошли</div>
+            </div>
+            <div class="stat-card">
+                <div class="number" id="statEmployees">0</div>
+                <div class="label">Сотрудников</div>
+            </div>
+        </div>
+
+        <div class="employee-list" id="employeeList">
+            <div class="loading">Загрузка данных...</div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // ⚠️ ЗАМЕНИТЕ НА ВАШИ ЗНАЧЕНИЯ
+        const SUPABASE_URL = 'https://xtvfliynzoqscbfsdejj.supabase.co';
+        const SUPABASE_ANON_KEY = 'sb_publishable_uxBZs58SElYaGbYBB0dyTw_pEHo8Z0s';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        let allResults = [];
+        let programs = [];
+
+        // Проверка прав доступа
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const role = localStorage.getItem('user_role');
+            if (role !== 'admin' && role !== 'engineer') {
+                alert('Доступ только для администраторов и инженеров');
+                window.location.href = 'dashboard.html';
+                return;
+            }
+
+            await loadPrograms();
+            await loadResults();
+            setupFilters();
+        }
+
+        // Загрузка программ
+        async function loadPrograms() {
+            const { data, error } = await supabase
+                .from('test_programs')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.error('Ошибка загрузки программ:', error);
+                return;
+            }
+
+            programs = data;
+            const select = document.getElementById('filterProgram');
+            programs.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                select.appendChild(opt);
+            });
+        }
+
+        // Загрузка результатов
+        async function loadResults() {
+            const { data, error } = await supabase
+                .from('test_results')
+                .select(`
+                    *,
+                    test_programs(name)
+                `)
+                .order('test_date', { ascending: false });
+
+            if (error) {
+                console.error('Ошибка загрузки результатов:', error);
+                document.getElementById('employeeList').innerHTML = 
+                    '<div class="empty-state">Ошибка загрузки данных</div>';
+                return;
+            }
+
+            allResults = data;
+            updateStats();
+            renderEmployees();
+        }
+
+        // Обновление статистики
+        function updateStats() {
+            const total = allResults.length;
+            const passed = allResults.filter(r => r.passed).length;
+            const failed = total - passed;
+            const employees = new Set(allResults.map(r => r.employee_name)).size;
+
+            document.getElementById('statTotal').textContent = total;
+            document.getElementById('statPassed').textContent = passed;
+            document.getElementById('statFailed').textContent = failed;
+            document.getElementById('statEmployees').textContent = employees;
+        }
+
+        // Фильтрация результатов
+        function getFilteredResults() {
+            const nameFilter = document.getElementById('filterName').value.toLowerCase();
+            const programFilter = document.getElementById('filterProgram').value;
+            const statusFilter = document.getElementById('filterStatus').value;
+            const dateFrom = document.getElementById('filterDateFrom').value;
+            const dateTo = document.getElementById('filterDateTo').value;
+
+            return allResults.filter(r => {
+                if (nameFilter && !r.employee_name.toLowerCase().includes(nameFilter)) return false;
+                if (programFilter && r.program_id !== programFilter) return false;
+                if (statusFilter === 'passed' && !r.passed) return false;
+                if (statusFilter === 'failed' && r.passed) return false;
+                if (dateFrom) {
+                    const testDate = new Date(r.test_date);
+                    const fromDate = new Date(dateFrom);
+                    if (testDate < fromDate) return false;
+                }
+                if (dateTo) {
+                    const testDate = new Date(r.test_date);
+                    const toDate = new Date(dateTo);
+                    toDate.setHours(23, 59, 59);
+                    if (testDate > toDate) return false;
+                }
+                return true;
+            });
+        }
+
+        // Отрисовка списка сотрудников
+        function renderEmployees() {
+            const filtered = getFilteredResults();
+            
+            if (filtered.length === 0) {
+                document.getElementById('employeeList').innerHTML = 
+                    '<div class="empty-state">Нет данных по выбранным фильтрам</div>';
+                return;
+            }
+
+            // Группировка по ФИО
+            const grouped = {};
+            filtered.forEach(r => {
+                if (!grouped[r.employee_name]) {
+                    grouped[r.employee_name] = [];
+                }
+                grouped[r.employee_name].push(r);
+            });
+
+            const list = document.getElementById('employeeList');
+            list.innerHTML = '';
+
+            Object.keys(grouped).sort().forEach(name => {
+                const records = grouped[name];
+                const passedCount = records.filter(r => r.passed).length;
+                const failedCount = records.length - passedCount;
+
+                const item = document.createElement('div');
+                item.className = 'employee-item';
+
+                const header = document.createElement('div');
+                header.className = 'employee-header';
+                header.innerHTML = `
+                    <span class="name">${name}</span>
+                    <div class="stats">
+                        <span class="stat total">${records.length} тестов</span>
+                        <span class="stat passed">${passedCount} прошли</span>
+                        <span class="stat failed">${failedCount} не прошли</span>
+                        <span class="toggle-icon">▼</span>
+                    </div>
+                `;
+
+                const details = document.createElement('div');
+                details.className = 'employee-details';
+
+                records.forEach(r => {
+                    const record = document.createElement('div');
+                    record.className = `test-record ${r.passed ? 'passed' : 'failed'}`;
+                    const date = new Date(r.test_date).toLocaleString('ru-RU');
+                    record.innerHTML = `
+                        <div class="date">${date}</div>
+                        <div class="program">${r.test_programs?.name || 'Неизвестная программа'}</div>
+                        <div class="result">
+                            <span class="score">${r.score}/${r.total_questions} (${r.percentage}%)</span>
+                            <span class="status ${r.passed ? 'passed' : 'failed'}">
+                                ${r.passed ? '✅ Прошёл' : '❌ Не прошёл'}
+                            </span>
+                        </div>
+                    `;
+                    details.appendChild(record);
+                });
+
+                header.addEventListener('click', () => {
+                    header.classList.toggle('active');
+                    details.classList.toggle('active');
+                });
+
+                item.appendChild(header);
+                item.appendChild(details);
+                list.appendChild(item);
+            });
+        }
+
+        // Настройка фильтров
+        function setupFilters() {
+            const inputs = ['filterName', 'filterProgram', 'filterStatus', 'filterDateFrom', 'filterDateTo'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', renderEmployees);
+                document.getElementById(id).addEventListener('change', renderEmployees);
+            });
+        }
+
+        window.handleLogout = async function() {
+            await supabase.auth.signOut();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        };
+
+        init();
+    </script>
+</body>
+</html>
