@@ -23,36 +23,18 @@
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
         header h1 { font-size: 1.5rem; }
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
+        .user-info { display: flex; align-items: center; gap: 10px; }
         .btn-logout {
-            background: #e74c3c;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
+            background: #e74c3c; color: white; border: none;
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 14px;
         }
         .btn-logout:hover { background: #c0392b; }
         .btn-users {
-            background: #27ae60;
-            color: white;
-            padding: 8px 16px;
-            border-radius: 6px;
-            text-decoration: none;
-            font-size: 14px;
-            display: none;
+            background: #27ae60; color: white; padding: 8px 16px;
+            border-radius: 6px; text-decoration: none; font-size: 14px; display: none;
         }
         .btn-users:hover { background: #229954; }
-        .container {
-            padding: 2rem;
-            max-width: 1200px;
-            margin: 0 auto;
-        }
+        .container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
         .welcome { margin-bottom: 2rem; }
         .welcome h2 { color: #2c3e50; margin-bottom: 0.5rem; }
         .welcome p { color: #7f8c8d; }
@@ -62,51 +44,37 @@
             gap: 20px;
         }
         .card {
-            background: white;
-            padding: 2rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: all 0.3s;
-            cursor: pointer;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            border: 2px solid transparent;
+            background: white; padding: 2rem; border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: all 0.3s;
+            cursor: pointer; text-decoration: none; color: inherit;
+            display: block; border: 2px solid transparent;
         }
         .card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 20px rgba(0,0,0,0.15);
             border-color: #667eea;
         }
-        .card h3 {
-            margin-bottom: 0.5rem;
-            color: #2c3e50;
-            font-size: 1.3rem;
-        }
+        .card h3 { margin-bottom: 0.5rem; color: #2c3e50; font-size: 1.3rem; }
         .card p { color: #7f8c8d; line-height: 1.5; }
         .card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
         .admin-only { display: none; }
         .placeholder-card {
-            border: 2px dashed #bdc3c7;
-            background: transparent;
-            cursor: default;
+            border: 2px dashed #bdc3c7; background: transparent; cursor: default;
         }
         .placeholder-card:hover {
-            transform: none;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-color: #bdc3c7;
+            transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: #bdc3c7;
         }
     </style>
 </head>
 <body>
-        <header>
+    <header>
         <a href="dashboard.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: white;">
             <img src="icon-192.png" alt="Логотип" style="width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: white; padding: 2px;">
             <h1 style="margin: 0; font-size: 1.5rem;">HSE Portal</h1>
         </a>
         <div class="user-info">
             <span id="user-name">Загрузка...</span>
-            <a href="users.html" class="btn-users" id="btn-users">👥 Пользователи</a>
+            <a href="users.html" class="btn-users" id="btn-users"> Пользователи</a>
             <button class="btn-logout" onclick="handleLogout()">Выход</button>
         </div>
     </header>
@@ -118,7 +86,7 @@
         </div>
 
         <div class="grid">
-            <!-- Плитка 1: Ситуационный центр (для всех) -->
+            <!-- Плитка 1: Ситуационный центр -->
             <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./admin.html" target="_blank" class="card">
                 <div class="card-icon">📊</div>
                 <h3>Ситуационный центр</h3>
@@ -132,7 +100,7 @@
                 <p>Администрирование проверок, предписаний и контроля соблюдения требований.</p>
             </a>
 
-            <!-- Плитка 3: Тестирование по ОТ (для всех) -->
+            <!-- Плитка 3: Тестирование по ОТ -->
             <a href="https://pkhlystunov.github.io/Balance_CRM_SC/test-public.html" target="_blank" class="card">
                 <div class="card-icon">📝</div>
                 <h3>Тестирование по ОТ</h3>
@@ -145,12 +113,13 @@
                 <h3>Аналитика тестирования</h3>
                 <p>Статистика прохождений тестов, результаты сотрудников, фильтры и отчёты.</p>
             </a>
+
             <!-- Плитка 5: Реестр выдачи СИЗ (только admin/engineer) -->
             <a href="siz-registry.html" class="card admin-only" id="card-siz">
-            <div class="card-icon">🦺</div>
-            <h3>Реестр выдачи СИЗ</h3>
-            <p>Учёт выдачи средств индивидуальной защиты, контроль сроков носки, фильтрация по организациям.</p>
-    </a>
+                <div class="card-icon">🦺</div>
+                <h3>Реестр выдачи СИЗ</h3>
+                <p>Учёт выдачи средств индивидуальной защиты, контроль сроков носки.</p>
+            </a>
 
             <!-- Заглушка -->
             <div class="card placeholder-card">
@@ -183,49 +152,24 @@
             const role = localStorage.getItem('user_role');
             const userName = localStorage.getItem('user_name');
             
-            console.log('🔍 Отладка:');
-            console.log('  Роль из localStorage:', role);
-            console.log('  Имя из localStorage:', userName);
-            console.log('  ID из localStorage:', localStorage.getItem('user_id'));
+            console.log('🔍 Отладка:', { role, userName });
 
-            if (!role) {
-                console.warn('⚠️ Роль не найдена в localStorage!');
-            }
+            document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || '?'})`;
 
-            document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || 'неизвестно'})`;
-
-                        // Показываем плитки для admin и engineer
+            // Показываем плитки только для admin и engineer
             if (role === 'admin' || role === 'engineer') {
-                console.log('✅ Пользователь имеет роль admin или engineer');
-                
-                const cardControl = document.getElementById('card-control');
-                const cardAnalytics = document.getElementById('card-analytics');
-                const cardSiz = document.getElementById('card-siz'); // <-- ДОБАВЛЕНО
-                
-                if (cardControl) {
-                    cardControl.style.display = 'block';
-                    console.log('✅ Показана плитка "Контроль ОТиПБ"');
-                } else {
-                    console.error('❌ Элемент card-control не найден!');
-                }
-                
-                if (cardAnalytics) {
-                    cardAnalytics.style.display = 'block';
-                    console.log('✅ Показана плитка "Аналитика тестирования"');
-                } else {
-                    console.error('❌ Элемент card-analytics не найден!');
-                }
-
-                // <-- ДОБАВЛЕНО: Логика для плитки СИЗ
-                if (cardSiz) {
-                    cardSiz.style.display = 'block';
-                    console.log('✅ Показана плитка "Реестр выдачи СИЗ"');
-                } else {
-                    console.error('❌ Элемент card-siz не найден! Проверьте HTML.');
-                }
-
+                const ids = ['card-control', 'card-analytics', 'card-siz'];
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = 'block';
+                        console.log(`✅ Показана плитка: ${id}`);
+                    } else {
+                        console.error(`❌ Элемент ${id} не найден в HTML!`);
+                    }
+                });
             } else {
-                console.log('⚠️ Пользователь не admin и не engineer, плитки скрыты');
+                console.log('️ Обычный пользователь, скрытые плитки остаются скрытыми');
             }
 
             // Кнопка "Пользователи" только для админов
@@ -236,7 +180,9 @@
                     console.log('✅ Показана кнопка "Пользователи"');
                 }
             }
+        }
 
+        // ✅ handleLogout вынесена НАРУЖУ из функции init
         window.handleLogout = async function() {
             await supabase.auth.signOut();
             localStorage.clear();
