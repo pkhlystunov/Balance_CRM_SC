@@ -74,7 +74,7 @@
         </a>
         <div class="user-info">
             <span id="user-name">Загрузка...</span>
-            <a href="users.html" class="btn-users" id="btn-users"> Пользователи</a>
+            <a href="users.html" class="btn-users" id="btn-users">👥 Пользователи</a>
             <button class="btn-logout" onclick="handleLogout()">Выход</button>
         </div>
     </header>
@@ -86,42 +86,42 @@
         </div>
 
         <div class="grid">
-            <!-- Плитка 1: Ситуационный центр -->
-            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./admin.html" target="_blank" class="card">
+            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./" target="_blank" class="card">
                 <div class="card-icon">📊</div>
                 <h3>Ситуационный центр</h3>
                 <p>Мониторинг инцидентов и оперативная сводка по охране труда.</p>
             </a>
 
-            <!-- Плитка 2: Контроль ОТиПБ (только admin/engineer) -->
-            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./" target="_blank" class="card admin-only" id="card-control">
+            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./admin.html" target="_blank" class="card admin-only" id="card-control">
                 <div class="card-icon">🛡️</div>
                 <h3>Контроль ОТиПБ</h3>
                 <p>Администрирование проверок, предписаний и контроля соблюдения требований.</p>
             </a>
 
-            <!-- Плитка 3: Тестирование по ОТ -->
             <a href="https://pkhlystunov.github.io/Balance_CRM_SC/test-public.html" target="_blank" class="card">
                 <div class="card-icon">📝</div>
                 <h3>Тестирование по ОТ</h3>
                 <p>Проверка знаний сотрудников по охране труда и промышленной безопасности.</p>
             </a>
 
-            <!-- Плитка 4: Аналитика тестирования (только admin/engineer) -->
             <a href="test-analytics.html" class="card admin-only" id="card-analytics">
                 <div class="card-icon">📈</div>
                 <h3>Аналитика тестирования</h3>
                 <p>Статистика прохождений тестов, результаты сотрудников, фильтры и отчёты.</p>
             </a>
 
-            <!-- Плитка 5: Реестр выдачи СИЗ (только admin/engineer) -->
             <a href="siz-registry.html" class="card admin-only" id="card-siz">
                 <div class="card-icon">🦺</div>
                 <h3>Реестр выдачи СИЗ</h3>
                 <p>Учёт выдачи средств индивидуальной защиты, контроль сроков носки.</p>
             </a>
 
-            <!-- Заглушка -->
+            <a href="personnel.html" class="card admin-only" id="card-personnel">
+                <div class="card-icon">🎓</div>
+                <h3>Учет обучения и медосмотров</h3>
+                <p>База данных сотрудников, контроль сроков медосмотров, обучения по ОТ, ПБ и ПромБез.</p>
+            </a>
+
             <div class="card placeholder-card">
                 <div class="card-icon">➕</div>
                 <h3>Добавить сервис</h3>
@@ -137,28 +137,23 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function init() {
-            console.log('🔍 Начало инициализации dashboard...');
+            console.log('🔍 Инициализация dashboard...');
             
             const { data: { session } } = await supabase.auth.getSession();
-            
             if (!session) {
-                console.log('❌ Нет сессии, перенаправление на index.html');
                 window.location.href = 'index.html';
                 return;
             }
 
-            console.log('✅ Сессия найдена');
-
             const role = localStorage.getItem('user_role');
             const userName = localStorage.getItem('user_name');
             
-            console.log('🔍 Отладка:', { role, userName });
+            console.log('Роль:', role, 'Имя:', userName);
 
             document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || '?'})`;
 
-            // Показываем плитки только для admin и engineer
             if (role === 'admin' || role === 'engineer') {
-                const ids = ['card-control', 'card-analytics', 'card-siz'];
+                const ids = ['card-control', 'card-analytics', 'card-siz', 'card-personnel'];
                 ids.forEach(id => {
                     const el = document.getElementById(id);
                     if (el) {
@@ -169,10 +164,9 @@
                     }
                 });
             } else {
-                console.log('️ Обычный пользователь, скрытые плитки остаются скрытыми');
+                console.log('⚠️ Обычный пользователь, скрытые плитки остаются скрытыми');
             }
 
-            // Кнопка "Пользователи" только для админов
             if (role === 'admin') {
                 const btnUsers = document.getElementById('btn-users');
                 if (btnUsers) {
@@ -182,7 +176,6 @@
             }
         }
 
-        // ✅ handleLogout вынесена НАРУЖУ из функции init
         window.handleLogout = async function() {
             await supabase.auth.signOut();
             localStorage.clear();
