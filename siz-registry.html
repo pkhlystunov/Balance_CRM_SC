@@ -7,150 +7,149 @@
     <title>Реестр выдачи СИЗ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
-    
-    header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    header a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
-    header h1 { margin: 0; font-size: 1.5rem; }
-    .header-actions { display: flex; gap: 10px; align-items: center; }
-    
-    .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; transition: background 0.3s; }
-    .btn-secondary { background: #95a5a6; color: white; }
-    .btn-secondary:hover { background: #7f8c8d; }
-    .btn-danger { background: #e74c3c; color: white; }
-    .btn-danger:hover { background: #c0392b; }
-    .btn-success { background: #27ae60; color: white; }
-    .btn-success:hover { background: #229954; }
-    .btn-primary { background: #3498db; color: white; }
-    .btn-primary:hover { background: #2980b9; }
-    .btn-sm { padding: 4px 8px; font-size: 12px; }
-    
-    .container { padding: 2rem; max-width: 100%; margin: 0 auto; }
-    
-    .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 15px; }
-    .top-bar h2 { color: #2c3e50; }
-    
-    .filters { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; }
-    .filter-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: end; }
-    .filter-group { display: flex; flex-direction: column; gap: 5px; }
-    .filter-group label { font-size: 13px; color: #555; font-weight: 600; }
-    .filter-group input, .filter-group select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 150px; }
-    
-    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 2rem; }
-    .stat-card { background: white; padding: 1.2rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
-    .stat-card .number { font-size: 2rem; font-weight: 700; color: #2c3e50; }
-    .stat-card .label { color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; }
-    .stat-card.success .number { color: #27ae60; }
-    .stat-card.warning .number { color: #f39c12; }
-    .stat-card.danger .number { color: #e74c3c; }
-    
-    /* АДАПТИВНАЯ ТАБЛИЦА */
-    .table-wrapper {
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        overflow: hidden;
-        width: 100%;
-    }
-    
-    table {
-        width: 100%;
-        border-collapse: collapse;
-        font-size: 12px;
-        table-layout: auto;
-    }
-    
-    th {
-        background: #34495e;
-        color: white;
-        padding: 8px 6px;
-        text-align: left;
-        font-weight: 500;
-        font-size: 11px;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-    
-    td {
-        padding: 6px 6px;
-        border-bottom: 1px solid #ecf0f1;
-        vertical-align: middle;
-        word-wrap: break-word;
-        max-width: 150px;
-    }
-    
-    tr:hover { background: #f8f9fa; }
-    
-    /* Специальные ширины для колонок */
-    th:nth-child(1), td:nth-child(1) { width: 8%; }   /* Категория */
-    th:nth-child(2), td:nth-child(2) { width: 15%; }  /* ФИО */
-    th:nth-child(3), td:nth-child(3) { width: 12%; }  /* Должность */
-    th:nth-child(4), td:nth-child(4) { width: 12%; }  /* Организация */
-    th:nth-child(5), td:nth-child(5) { width: 6%; }   /* Одежда */
-    th:nth-child(6), td:nth-child(6) { width: 6%; }   /* Обувь */
-    th:nth-child(7), td:nth-child(7) { width: 5%; }   /* Рост */
-    th:nth-child(8), td:nth-child(8) { width: 8%; }   /* Лето */
-    th:nth-child(9), td:nth-child(9) { width: 8%; }   /* Статус Лето */
-    th:nth-child(10), td:nth-child(10) { width: 8%; } /* Зима */
-    th:nth-child(11), td:nth-child(11) { width: 8%; } /* Статус Зима */
-    th:nth-child(12), td:nth-child(12) { width: 8%; } /* Статус сотрудника */
-    th:nth-child(13), td:nth-child(13) { width: 10%; } /* Комментарии */
-    th:nth-child(14), td:nth-child(14) { width: 4%; } /* Действия */
-    
-    .status-badge { padding: 3px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; display: inline-block; white-space: nowrap; }
-    .status-ok { background: #d4edda; color: #155724; }
-    .status-warning { background: #fff3cd; color: #856404; }
-    .status-expired { background: #f8d7da; color: #721c24; }
-    .status-none { background: #e2e3e5; color: #383d41; }
-    .status-active { background: #d4edda; color: #155724; }
-    .status-fired { background: #e2e3e5; color: #383d41; }
-    
-    .row-expired { background: #fff5f5 !important; }
-    .row-warning { background: #fffbeb !important; }
-    
-    .empty-state, .loading { text-align: center; padding: 3rem; color: #7f8c8d; }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
+        
+        header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; transition: background 0.3s; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #229954; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
+        
+        .container { padding: 2rem; max-width: 100%; margin: 0 auto; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 15px; }
+        .top-bar h2 { color: #2c3e50; }
+        
+        .filters { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .filter-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: end; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 13px; color: #555; font-weight: 600; }
+        .filter-group input, .filter-group select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 150px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.2rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card .number { font-size: 2rem; font-weight: 700; color: #2c3e50; }
+        .stat-card .label { color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; }
+        .stat-card.success .number { color: #27ae60; }
+        .stat-card.warning .number { color: #f39c12; }
+        .stat-card.danger .number { color: #e74c3c; }
+        
+        /* АДАПТИВНАЯ ТАБЛИЦА */
+        .table-wrapper {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+            width: 100%;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 12px;
+            table-layout: auto;
+        }
+        
+        th {
+            background: #34495e;
+            color: white;
+            padding: 8px 6px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 11px;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        td {
+            padding: 6px 6px;
+            border-bottom: 1px solid #ecf0f1;
+            vertical-align: middle;
+            word-wrap: break-word;
+            max-width: 150px;
+        }
+        
+        tr:hover { background: #f8f9fa; }
+        
+        /* Специальные ширины для колонок */
+        th:nth-child(1), td:nth-child(1) { width: 8%; }
+        th:nth-child(2), td:nth-child(2) { width: 15%; }
+        th:nth-child(3), td:nth-child(3) { width: 12%; }
+        th:nth-child(4), td:nth-child(4) { width: 12%; }
+        th:nth-child(5), td:nth-child(5) { width: 6%; }
+        th:nth-child(6), td:nth-child(6) { width: 6%; }
+        th:nth-child(7), td:nth-child(7) { width: 5%; }
+        th:nth-child(8), td:nth-child(8) { width: 8%; }
+        th:nth-child(9), td:nth-child(9) { width: 8%; }
+        th:nth-child(10), td:nth-child(10) { width: 8%; }
+        th:nth-child(11), td:nth-child(11) { width: 8%; }
+        th:nth-child(12), td:nth-child(12) { width: 8%; }
+        th:nth-child(13), td:nth-child(13) { width: 10%; }
+        th:nth-child(14), td:nth-child(14) { width: 4%; }
+        
+        .status-badge { padding: 3px 6px; border-radius: 10px; font-size: 10px; font-weight: 600; display: inline-block; white-space: nowrap; }
+        .status-ok { background: #d4edda; color: #155724; }
+        .status-warning { background: #fff3cd; color: #856404; }
+        .status-expired { background: #f8d7da; color: #721c24; }
+        .status-none { background: #e2e3e5; color: #383d41; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-fired { background: #e2e3e5; color: #383d41; }
+        
+        .row-expired { background: #fff5f5 !important; }
+        .row-warning { background: #fffbeb !important; }
+        
+        .empty-state, .loading { text-align: center; padding: 3rem; color: #7f8c8d; }
 
-    /* --- Стили для Модального окна --- */
-    .modal-overlay {
-        display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
-    }
-    .modal-overlay.active { display: flex; }
-    .modal-content {
-        background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 700px;
-        max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
-    }
-    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
-    .modal-header h3 { color: #2c3e50; }
-    .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
-    .close-modal:hover { color: #e74c3c; }
-    
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
-    .form-group { display: flex; flex-direction: column; gap: 5px; }
-    .form-group label { font-size: 13px; font-weight: 600; color: #555; }
-    .form-group input, .form-group select, .form-group textarea {
-        padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%;
-    }
-    .form-group textarea { resize: vertical; min-height: 60px; }
-    .form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px; }
-    .hint { font-size: 11px; color: #95a5a6; margin-top: 2px; }
+        /* --- Модальное окно --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 700px;
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h3 { color: #2c3e50; }
+        .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
+        .close-modal:hover { color: #e74c3c; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%;
+        }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px; }
+        .hint { font-size: 11px; color: #95a5a6; margin-top: 2px; }
 
-    /* Адаптивность для маленьких экранов */
-    @media screen and (max-width: 1200px) {
-        table { font-size: 11px; }
-        th { padding: 6px 4px; font-size: 10px; }
-        td { padding: 5px 4px; }
-        .container { padding: 1rem; }
-    }
+        @media screen and (max-width: 1200px) {
+            table { font-size: 11px; }
+            th { padding: 6px 4px; font-size: 10px; }
+            td { padding: 5px 4px; }
+            .container { padding: 1rem; }
+        }
 
-    @media screen and (max-width: 768px) {
-        .stats { grid-template-columns: repeat(2, 1fr); }
-        .filter-row { flex-direction: column; align-items: stretch; }
-        .filter-group input, .filter-group select { min-width: 100%; }
-    }
-</style>
+        @media screen and (max-width: 768px) {
+            .stats { grid-template-columns: repeat(2, 1fr); }
+            .filter-row { flex-direction: column; align-items: stretch; }
+            .filter-group input, .filter-group select { min-width: 100%; }
+        }
+    </style>
 </head>
 <body>
     <header>
@@ -190,8 +189,8 @@
                         <option value="">Все</option>
                         <option value="ok">✅ Актуально</option>
                         <option value="warning">⚠️ Истекает</option>
-                        <option value="expired"> Просрочено</option>
-                        <option value="none">⚪ Не выдано</option>
+                        <option value="expired">❌ Просрочено</option>
+                        <option value="none"> Не выдано</option>
                     </select>
                 </div>
             </div>
@@ -231,7 +230,7 @@
         </div>
     </div>
 
-    <!-- Модальное окно для добавления/редактирования -->
+    <!-- Модальное окно -->
     <div class="modal-overlay" id="modal">
         <div class="modal-content">
             <div class="modal-header">
@@ -310,7 +309,6 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allData = [];
-        const SIZ_WEAR_PERIOD_MONTHS = 12;
         const WARNING_DAYS_BEFORE_EXPIRY = 60;
 
         async function init() {
@@ -366,17 +364,21 @@
             return null;
         }
 
-        function getSizStatus(issueDateStr) {
+        // ЗИМА = 24 месяца, ЛЕТО = 12 месяцев
+        function getSizStatus(issueDateStr, season) {
             const issueDate = parseDate(issueDateStr);
             if (!issueDate) return { status: 'none', label: '⚪ Не выдано', class: 'status-none' };
             
             const now = new Date();
             const expiryDate = new Date(issueDate);
-            expiryDate.setMonth(expiryDate.getMonth() + SIZ_WEAR_PERIOD_MONTHS);
+            
+            const wearPeriodMonths = season === 'winter' ? 24 : 12;
+            expiryDate.setMonth(expiryDate.getMonth() + wearPeriodMonths);
+            
             const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
             
             if (daysUntilExpiry < 0) return { status: 'expired', label: '❌ Просрочено', class: 'status-expired' };
-            if (daysUntilExpiry < WARNING_DAYS_BEFORE_EXPIRY) return { status: 'warning', label: '️ Истекает', class: 'status-warning' };
+            if (daysUntilExpiry < WARNING_DAYS_BEFORE_EXPIRY) return { status: 'warning', label: '⚠️ Истекает', class: 'status-warning' };
             return { status: 'ok', label: '✅ Актуально', class: 'status-ok' };
         }
 
@@ -391,15 +393,15 @@
                 if (org && row.organization !== org) return false;
                 if (cat && row.category !== cat) return false;
                 if (status) {
-                    const s1 = getSizStatus(row.summer_issue_date).status;
-                    const s2 = getSizStatus(row.winter_issue_date).status;
+                    const s1 = getSizStatus(row.summer_issue_date, 'summer').status;
+                    const s2 = getSizStatus(row.winter_issue_date, 'winter').status;
                     if (status === 'none' && s1 !== 'none' && s2 !== 'none') return false;
                     if (status !== 'none' && s1 !== status && s2 !== status) return false;
                 }
                 return true;
             });
 
-            // СОРТИРОВКА: Уволенные всегда в конце, остальные по алфавиту
+            // Уволенные всегда в конце, остальные по алфавиту
             filtered.sort((a, b) => {
                 const isAFired = a.status === 'Уволен';
                 const isBFired = b.status === 'Уволен';
@@ -417,12 +419,11 @@
             let ok = 0, warn = 0, exp = 0, activeCount = 0;
             
             filtered.forEach(row => {
-                // Если уволен - пропускаем, не считаем в статистику
-                if (row.status === 'Уволен') return; 
+                if (row.status === 'Уволен') return;
                 
                 activeCount++;
-                const s1 = getSizStatus(row.summer_issue_date).status;
-                const s2 = getSizStatus(row.winter_issue_date).status;
+                const s1 = getSizStatus(row.summer_issue_date, 'summer').status;
+                const s2 = getSizStatus(row.winter_issue_date, 'winter').status;
                 const worst = [s1, s2].includes('expired') ? 'expired' : [s1, s2].includes('warning') ? 'warning' : [s1, s2].includes('ok') ? 'ok' : 'none';
                 
                 if (worst === 'ok') ok++;
@@ -447,8 +448,8 @@
             }
 
             tbody.innerHTML = filtered.map(row => {
-                const sSummer = getSizStatus(row.summer_issue_date);
-                const sWinter = getSizStatus(row.winter_issue_date);
+                const sSummer = getSizStatus(row.summer_issue_date, 'summer');
+                const sWinter = getSizStatus(row.winter_issue_date, 'winter');
                 let rowClass = '';
                 if (row.status === 'Уволен') {
                     rowClass = '';
@@ -486,7 +487,7 @@
             }).join('');
         }
 
-        // --- ЛОГИКА МОДАЛЬНОГО ОКНА ---
+        // --- МОДАЛЬНОЕ ОКНО ---
         window.openModal = function(mode, id = null) {
             const modal = document.getElementById('modal');
             const form = document.getElementById('sizForm');
