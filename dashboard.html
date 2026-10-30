@@ -150,6 +150,12 @@
                 <h3>Тестирование по ОТ</h3>
                 <p>Проверка знаний сотрудников по охране труда и промышленной безопасности.</p>
             </a>
+
+            <a href="test-analytics.html" class="card admin-only" id="card-analytics">
+    <div class="card-icon">📊</div>
+    <h3>Аналитика тестирования</h3>
+    <p>Статистика прохождений тестов, результаты сотрудников, фильтры и отчёты.</p>
+</a>
             
             <div class="card placeholder-card">
                 <div class="card-icon">➕</div>
@@ -202,8 +208,9 @@
         if (role === 'admin' || role === 'engineer') {
     document.getElementById('card-control').classList.remove('admin-only');
     document.getElementById('card-control').style.display = 'block';
+    document.getElementById('card-analytics').classList.remove('admin-only');
+    document.getElementById('card-analytics').style.display = 'block';
 }
-
 // ✅ НОВОЕ: показываем кнопку "Пользователи" только админам
 if (role === 'admin') {
     document.getElementById('btn-users').style.display = 'inline-block';
