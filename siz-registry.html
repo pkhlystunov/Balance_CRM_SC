@@ -3,138 +3,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon-192.png">
     <title>Реестр выдачи СИЗ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f4f6f9;
-            min-height: 100vh;
-        }
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        header h1 { font-size: 1.5rem; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
+        
+        header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
+        header h1 { margin: 0; font-size: 1.5rem; }
         .header-actions { display: flex; gap: 10px; align-items: center; }
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
-        }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; transition: background 0.3s; }
         .btn-secondary { background: #95a5a6; color: white; }
         .btn-secondary:hover { background: #7f8c8d; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-danger:hover { background: #c0392b; }
         .btn-success { background: #27ae60; color: white; }
         .btn-success:hover { background: #229954; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        .btn-sm { padding: 4px 8px; font-size: 12px; }
         
         .container { padding: 2rem; max-width: 1400px; margin: 0 auto; }
         
-        .filters {
-            background: white;
-            padding: 1.5rem;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            margin-bottom: 2rem;
-        }
-        .filters h3 { margin-bottom: 1rem; color: #2c3e50; }
-        .filter-row {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            align-items: end;
-        }
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        .filter-group label {
-            font-size: 14px;
-            color: #555;
-            font-weight: 500;
-        }
-        .filter-group input,
-        .filter-group select {
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            font-size: 14px;
-            min-width: 150px;
-        }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 15px; }
+        .top-bar h2 { color: #2c3e50; }
         
-        .stats {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 15px;
-            margin-bottom: 2rem;
-        }
-        .stat-card {
-            background: white;
-            padding: 1.2rem;
-            border-radius: 10px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            text-align: center;
-        }
-        .stat-card .number {
-            font-size: 2rem;
-            font-weight: 700;
-            color: #2c3e50;
-        }
-        .stat-card .label {
-            color: #7f8c8d;
-            font-size: 0.85rem;
-            margin-top: 0.3rem;
-        }
+        .filters { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; }
+        .filter-row { display: flex; flex-wrap: wrap; gap: 15px; align-items: end; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 13px; color: #555; font-weight: 600; }
+        .filter-group input, .filter-group select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 150px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.2rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card .number { font-size: 2rem; font-weight: 700; color: #2c3e50; }
+        .stat-card .label { color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; }
         .stat-card.success .number { color: #27ae60; }
         .stat-card.warning .number { color: #f39c12; }
         .stat-card.danger .number { color: #e74c3c; }
         
-        .table-container {
-            background: white;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            overflow-x: auto;
-        }
-        
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 14px;
-        }
-        th {
-            background: #34495e;
-            color: white;
-            padding: 12px 10px;
-            text-align: left;
-            font-weight: 500;
-            white-space: nowrap;
-        }
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #ecf0f1;
-        }
+        .table-container { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 1200px; }
+        th { background: #34495e; color: white; padding: 12px 10px; text-align: left; font-weight: 500; white-space: nowrap; position: sticky; top: 0; }
+        td { padding: 10px; border-bottom: 1px solid #ecf0f1; vertical-align: middle; }
         tr:hover { background: #f8f9fa; }
         
-        .status-badge {
-            padding: 4px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            display: inline-block;
-        }
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; white-space: nowrap; }
         .status-ok { background: #d4edda; color: #155724; }
         .status-warning { background: #fff3cd; color: #856404; }
         .status-expired { background: #f8d7da; color: #721c24; }
@@ -143,23 +60,39 @@
         .row-expired { background: #fff5f5 !important; }
         .row-warning { background: #fffbeb !important; }
         
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #7f8c8d;
+        .empty-state, .loading { text-align: center; padding: 3rem; color: #7f8c8d; }
+
+        /* --- Стили для Модального окна --- */
+        .modal-overlay {
+            display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center;
         }
-        .loading {
-            text-align: center;
-            padding: 3rem;
-            color: #7f8c8d;
+        .modal-overlay.active { display: flex; }
+        .modal-content {
+            background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 700px;
+            max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 40px rgba(0,0,0,0.2);
         }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .modal-header h3 { color: #2c3e50; }
+        .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
+        .close-modal:hover { color: #e74c3c; }
+        
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 13px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select, .form-group textarea {
+            padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; width: 100%;
+        }
+        .form-group textarea { resize: vertical; min-height: 60px; }
+        .form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px; }
+        .hint { font-size: 11px; color: #95a5a6; margin-top: 2px; }
     </style>
 </head>
 <body>
     <header>
-        <a href="dashboard.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: white;">
+        <a href="dashboard.html">
             <img src="icon-192.png" alt="Логотип" style="width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: white; padding: 2px;">
-            <h1 style="margin: 0; font-size: 1.5rem;">HSE Portal</h1>
+            <h1>Реестр выдачи СИЗ</h1>
         </a>
         <div class="header-actions">
             <a href="dashboard.html" class="btn btn-secondary">← Назад</a>
@@ -168,8 +101,12 @@
     </header>
 
     <div class="container">
+        <div class="top-bar">
+            <h2>Учёт и контроль сроков носки</h2>
+            <button class="btn btn-success" onclick="openModal('add')">➕ Добавить сотрудника</button>
+        </div>
+
         <div class="filters">
-            <h3>🔍 Фильтры</h3>
             <div class="filter-row">
                 <div class="filter-group">
                     <label>Поиск по ФИО</label>
@@ -177,15 +114,11 @@
                 </div>
                 <div class="filter-group">
                     <label>Организация</label>
-                    <select id="filterOrg">
-                        <option value="">Все организации</option>
-                    </select>
+                    <select id="filterOrg"><option value="">Все организации</option></select>
                 </div>
                 <div class="filter-group">
                     <label>Категория</label>
-                    <select id="filterCategory">
-                        <option value="">Все категории</option>
-                    </select>
+                    <select id="filterCategory"><option value="">Все категории</option></select>
                 </div>
                 <div class="filter-group">
                     <label>Статус СИЗ</label>
@@ -194,29 +127,17 @@
                         <option value="ok">✅ Актуально</option>
                         <option value="warning">⚠️ Истекает</option>
                         <option value="expired">❌ Просрочено</option>
-                        <option value="none"> Не выдано</option>
+                        <option value="none">⚪ Не выдано</option>
                     </select>
                 </div>
             </div>
         </div>
 
         <div class="stats">
-            <div class="stat-card">
-                <div class="number" id="statTotal">0</div>
-                <div class="label">Всего сотрудников</div>
-            </div>
-            <div class="stat-card success">
-                <div class="number" id="statOk">0</div>
-                <div class="label">СИЗ актуальны</div>
-            </div>
-            <div class="stat-card warning">
-                <div class="number" id="statWarning">0</div>
-                <div class="label">Требуют внимания</div>
-            </div>
-            <div class="stat-card danger">
-                <div class="number" id="statExpired">0</div>
-                <div class="label">Просрочено</div>
-            </div>
+            <div class="stat-card"><div class="number" id="statTotal">0</div><div class="label">Всего сотрудников</div></div>
+            <div class="stat-card success"><div class="number" id="statOk">0</div><div class="label">СИЗ актуальны</div></div>
+            <div class="stat-card warning"><div class="number" id="statWarning">0</div><div class="label">Требуют внимания</div></div>
+            <div class="stat-card danger"><div class="number" id="statExpired">0</div><div class="label">Просрочено</div></div>
         </div>
 
         <div class="table-container">
@@ -227,20 +148,92 @@
                         <th>ФИО</th>
                         <th>Должность</th>
                         <th>Организация</th>
-                        <th>Размер одежды</th>
-                        <th>Размер обуви</th>
+                        <th>Одежда</th>
+                        <th>Обувь</th>
                         <th>Рост</th>
-                        <th>Лето (дата выдачи)</th>
-                        <th>Статус Лето</th>
-                        <th>Зима (дата выдачи)</th>
-                        <th>Статус Зима</th>
-                        <th>Комментарии</th>
+                        <th>Лето</th>
+                        <th>Статус</th>
+                        <th>Зима</th>
+                        <th>Статус</th>
+                        <th>Действия</th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     <tr><td colspan="12" class="loading">Загрузка данных...</td></tr>
                 </tbody>
             </table>
+        </div>
+    </div>
+
+    <!-- Модальное окно для добавления/редактирования -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Добавить сотрудника</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="sizForm" onsubmit="saveEmployee(event)">
+                <input type="hidden" id="editId">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>Категория *</label>
+                        <input type="text" id="f_category" required placeholder="ИТР, Стройка, База...">
+                    </div>
+                    <div class="form-group">
+                        <label>ФИО *</label>
+                        <input type="text" id="f_full_name" required placeholder="Иванов Иван Иванович">
+                    </div>
+                    <div class="form-group">
+                        <label>Должность *</label>
+                        <input type="text" id="f_position" required placeholder="Инженер ПТО">
+                    </div>
+                    <div class="form-group">
+                        <label>Организация *</label>
+                        <input type="text" id="f_organization" required placeholder="ООО 'СК Жилье'">
+                    </div>
+                    <div class="form-group">
+                        <label>Дата приема</label>
+                        <input type="text" id="f_hire_date" placeholder="ДД.ММ.ГГГГ или ММ.ГГГГ">
+                        <span class="hint">Например: 01.03.2024 или 03.2024</span>
+                    </div>
+                    <div class="form-group">
+                        <label>Размер одежды</label>
+                        <input type="text" id="f_clothing_size" placeholder="48-50">
+                    </div>
+                    <div class="form-group">
+                        <label>Размер обуви</label>
+                        <input type="text" id="f_shoe_size" placeholder="42">
+                    </div>
+                    <div class="form-group">
+                        <label>Рост</label>
+                        <input type="text" id="f_height" placeholder="175">
+                    </div>
+                    <div class="form-group">
+                        <label>Получение Лето</label>
+                        <input type="text" id="f_summer_issue_date" placeholder="ДД.ММ.ГГГГ или ММ.ГГГГ">
+                    </div>
+                    <div class="form-group">
+                        <label>Получение Зима</label>
+                        <input type="text" id="f_winter_issue_date" placeholder="ДД.ММ.ГГГГ или ММ.ГГГГ">
+                    </div>
+                    <div class="form-group">
+                        <label>Статус</label>
+                        <select id="f_status">
+                            <option value="Активен">Активен</option>
+                            <option value="Уволен">Уволен</option>
+                            <option value="Декрет">Декрет</option>
+                        </select>
+                    </div>
+                    <div class="form-group" style="grid-column: 1 / -1;">
+                        <label>Комментарии</label>
+                        <textarea id="f_comments" placeholder="Например: Получены только ботинки, спецодежда в заказе"></textarea>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn btn-success" id="saveBtn">💾 Сохранить</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -251,25 +244,17 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let allData = [];
-        let organizations = new Set();
-        let categories = new Set();
-
-        // Срок носки СИЗ в месяцах (для расчета статуса)
         const SIZ_WEAR_PERIOD_MONTHS = 12;
-        const WARNING_DAYS_BEFORE_EXPIRY = 60; // За 60 дней до истечения - предупреждение
+        const WARNING_DAYS_BEFORE_EXPIRY = 60;
 
         async function init() {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
-            }
+            if (!session) { window.location.href = 'index.html'; return; }
 
             const role = localStorage.getItem('user_role');
             if (role !== 'admin' && role !== 'engineer') {
                 alert('Доступ только для администраторов и инженеров');
-                window.location.href = 'dashboard.html';
-                return;
+                window.location.href = 'dashboard.html'; return;
             }
 
             await loadData();
@@ -278,66 +263,43 @@
         }
 
         async function loadData() {
-            const { data, error } = await supabase
-                .from('employees_siz')
-                .select('*')
-                .order('full_name');
-
+            const { data, error } = await supabase.from('employees_siz').select('*').order('full_name');
             if (error) {
-                console.error('Ошибка загрузки:', error);
-                document.getElementById('tableBody').innerHTML = 
-                    '<tr><td colspan="12" class="empty-state">Ошибка загрузки данных</td></tr>';
+                console.error('Ошибка:', error);
+                document.getElementById('tableBody').innerHTML = '<tr><td colspan="12" class="empty-state">Ошибка загрузки данных</td></tr>';
                 return;
             }
-
             allData = data || [];
         }
 
         function populateFilters() {
+            const orgs = new Set(), cats = new Set();
             allData.forEach(row => {
-                if (row.organization) organizations.add(row.organization);
-                if (row.category) categories.add(row.category);
+                if (row.organization) orgs.add(row.organization);
+                if (row.category) cats.add(row.category);
             });
 
             const orgSelect = document.getElementById('filterOrg');
-            organizations.forEach(org => {
-                const opt = document.createElement('option');
-                opt.value = org;
-                opt.textContent = org;
-                orgSelect.appendChild(opt);
-            });
+            orgs.forEach(org => { const opt = document.createElement('option'); opt.value = org; opt.textContent = org; orgSelect.appendChild(opt); });
 
             const catSelect = document.getElementById('filterCategory');
-            categories.forEach(cat => {
-                const opt = document.createElement('option');
-                opt.value = cat;
-                opt.textContent = cat;
-                catSelect.appendChild(opt);
-            });
+            cats.forEach(cat => { const opt = document.createElement('option'); opt.value = cat; opt.textContent = cat; catSelect.appendChild(opt); });
         }
 
-        // Парсинг даты из строки вида "07.2025" или "10.11.2025"
         function parseDate(dateStr) {
             if (!dateStr || dateStr.trim() === '') return null;
-            
             dateStr = dateStr.trim();
-            
-            // Формат ММ.ГГГГ (например, "07.2025")
             if (/^\d{2}\.\d{4}$/.test(dateStr)) {
                 const [month, year] = dateStr.split('.');
                 return new Date(parseInt(year), parseInt(month) - 1, 1);
             }
-            
-            // Формат ДД.ММ.ГГГГ (например, "10.11.2025")
             if (/^\d{2}\.\d{2}\.\d{4}$/.test(dateStr)) {
                 const [day, month, year] = dateStr.split('.');
                 return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
             }
-            
             return null;
         }
 
-        // Определение статуса СИЗ
         function getSizStatus(issueDateStr) {
             const issueDate = parseDate(issueDateStr);
             if (!issueDate) return { status: 'none', label: '⚪ Не выдано', class: 'status-none' };
@@ -345,71 +307,52 @@
             const now = new Date();
             const expiryDate = new Date(issueDate);
             expiryDate.setMonth(expiryDate.getMonth() + SIZ_WEAR_PERIOD_MONTHS);
-            
             const daysUntilExpiry = Math.ceil((expiryDate - now) / (1000 * 60 * 60 * 24));
             
-            if (daysUntilExpiry < 0) {
-                return { status: 'expired', label: ' Просрочено', class: 'status-expired' };
-            } else if (daysUntilExpiry < WARNING_DAYS_BEFORE_EXPIRY) {
-                return { status: 'warning', label: '⚠️ Истекает', class: 'status-warning' };
-            } else {
-                return { status: 'ok', label: '✅ Актуально', class: 'status-ok' };
-            }
+            if (daysUntilExpiry < 0) return { status: 'expired', label: '❌ Просрочено', class: 'status-expired' };
+            if (daysUntilExpiry < WARNING_DAYS_BEFORE_EXPIRY) return { status: 'warning', label: '⚠️ Истекает', class: 'status-warning' };
+            return { status: 'ok', label: '✅ Актуально', class: 'status-ok' };
         }
 
         function getFilteredData() {
-            const nameFilter = document.getElementById('filterName').value.toLowerCase();
-            const orgFilter = document.getElementById('filterOrg').value;
-            const catFilter = document.getElementById('filterCategory').value;
-            const statusFilter = document.getElementById('filterStatus').value;
+            const name = document.getElementById('filterName').value.toLowerCase();
+            const org = document.getElementById('filterOrg').value;
+            const cat = document.getElementById('filterCategory').value;
+            const status = document.getElementById('filterStatus').value;
 
             return allData.filter(row => {
-                if (nameFilter && !row.full_name.toLowerCase().includes(nameFilter)) return false;
-                if (orgFilter && row.organization !== orgFilter) return false;
-                if (catFilter && row.category !== catFilter) return false;
-                
-                if (statusFilter) {
-                    const summerStatus = getSizStatus(row.summer_issue_date).status;
-                    const winterStatus = getSizStatus(row.winter_issue_date).status;
-                    // Показываем строку, если хотя бы один из статусов совпадает с фильтром
-                    if (statusFilter === 'none') {
-                        if (summerStatus !== 'none' && winterStatus !== 'none') return false;
-                    } else {
-                        if (summerStatus !== statusFilter && winterStatus !== statusFilter) return false;
-                    }
+                if (name && !row.full_name.toLowerCase().includes(name)) return false;
+                if (org && row.organization !== org) return false;
+                if (cat && row.category !== cat) return false;
+                if (status) {
+                    const s1 = getSizStatus(row.summer_issue_date).status;
+                    const s2 = getSizStatus(row.winter_issue_date).status;
+                    if (status === 'none' && s1 !== 'none' && s2 !== 'none') return false;
+                    if (status !== 'none' && s1 !== status && s2 !== status) return false;
                 }
-                
                 return true;
             });
         }
 
-        function updateStats(filteredData) {
-            let okCount = 0, warningCount = 0, expiredCount = 0;
-            
-            filteredData.forEach(row => {
-                const summerStatus = getSizStatus(row.summer_issue_date).status;
-                const winterStatus = getSizStatus(row.winter_issue_date).status;
-                
-                // Считаем по худшему статусу
-                const worstStatus = [summerStatus, winterStatus].includes('expired') ? 'expired' :
-                                   [summerStatus, winterStatus].includes('warning') ? 'warning' :
-                                   [summerStatus, winterStatus].includes('ok') ? 'ok' : 'none';
-                
-                if (worstStatus === 'ok') okCount++;
-                else if (worstStatus === 'warning') warningCount++;
-                else if (worstStatus === 'expired') expiredCount++;
+        function updateStats(filtered) {
+            let ok = 0, warn = 0, exp = 0;
+            filtered.forEach(row => {
+                const s1 = getSizStatus(row.summer_issue_date).status;
+                const s2 = getSizStatus(row.winter_issue_date).status;
+                const worst = [s1, s2].includes('expired') ? 'expired' : [s1, s2].includes('warning') ? 'warning' : [s1, s2].includes('ok') ? 'ok' : 'none';
+                if (worst === 'ok') ok++;
+                else if (worst === 'warning') warn++;
+                else if (worst === 'expired') exp++;
             });
-
-            document.getElementById('statTotal').textContent = filteredData.length;
-            document.getElementById('statOk').textContent = okCount;
-            document.getElementById('statWarning').textContent = warningCount;
-            document.getElementById('statExpired').textContent = expiredCount;
+            document.getElementById('statTotal').textContent = filtered.length;
+            document.getElementById('statOk').textContent = ok;
+            document.getElementById('statWarning').textContent = warn;
+            document.getElementById('statExpired').textContent = exp;
         }
 
         function renderTable() {
             const filtered = getFilteredData();
             updateStats(filtered);
-
             const tbody = document.getElementById('tableBody');
             
             if (filtered.length === 0) {
@@ -418,16 +361,11 @@
             }
 
             tbody.innerHTML = filtered.map(row => {
-                const summerStatus = getSizStatus(row.summer_issue_date);
-                const winterStatus = getSizStatus(row.winter_issue_date);
-                
-                // Определяем класс строки по худшему статусу
+                const sSummer = getSizStatus(row.summer_issue_date);
+                const sWinter = getSizStatus(row.winter_issue_date);
                 let rowClass = '';
-                if (summerStatus.status === 'expired' || winterStatus.status === 'expired') {
-                    rowClass = 'row-expired';
-                } else if (summerStatus.status === 'warning' || winterStatus.status === 'warning') {
-                    rowClass = 'row-warning';
-                }
+                if (sSummer.status === 'expired' || sWinter.status === 'expired') rowClass = 'row-expired';
+                else if (sSummer.status === 'warning' || sWinter.status === 'warning') rowClass = 'row-warning';
 
                 return `
                     <tr class="${rowClass}">
@@ -439,16 +377,106 @@
                         <td>${row.shoe_size || '—'}</td>
                         <td>${row.height || '—'}</td>
                         <td>${row.summer_issue_date || '—'}</td>
-                        <td><span class="status-badge ${summerStatus.class}">${summerStatus.label}</span></td>
+                        <td><span class="status-badge ${sSummer.class}">${sSummer.label}</span></td>
                         <td>${row.winter_issue_date || '—'}</td>
-                        <td><span class="status-badge ${winterStatus.class}">${winterStatus.label}</span></td>
-                        <td>${row.comments || '—'}</td>
+                        <td><span class="status-badge ${sWinter.class}">${sWinter.label}</span></td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="openModal('edit', '${row.id}')">✏️</button>
+                        </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        // Обработчики фильтров
+        // --- ЛОГИКА МОДАЛЬНОГО ОКНА ---
+        window.openModal = function(mode, id = null) {
+            const modal = document.getElementById('modal');
+            const form = document.getElementById('sizForm');
+            form.reset();
+            document.getElementById('editId').value = '';
+
+            if (mode === 'edit' && id) {
+                document.getElementById('modalTitle').textContent = 'Редактировать запись';
+                document.getElementById('saveBtn').textContent = '💾 Обновить';
+                document.getElementById('editId').value = id;
+                
+                const row = allData.find(r => r.id === id);
+                if (row) {
+                    document.getElementById('f_category').value = row.category || '';
+                    document.getElementById('f_full_name').value = row.full_name || '';
+                    document.getElementById('f_position').value = row.position || '';
+                    document.getElementById('f_organization').value = row.organization || '';
+                    document.getElementById('f_hire_date').value = row.hire_date || '';
+                    document.getElementById('f_clothing_size').value = row.clothing_size || '';
+                    document.getElementById('f_shoe_size').value = row.shoe_size || '';
+                    document.getElementById('f_height').value = row.height || '';
+                    document.getElementById('f_summer_issue_date').value = row.summer_issue_date || '';
+                    document.getElementById('f_winter_issue_date').value = row.winter_issue_date || '';
+                    document.getElementById('f_status').value = row.status || 'Активен';
+                    document.getElementById('f_comments').value = row.comments || '';
+                }
+            } else {
+                document.getElementById('modalTitle').textContent = 'Добавить сотрудника';
+                document.getElementById('saveBtn').textContent = '💾 Добавить';
+            }
+            modal.classList.add('active');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('modal').classList.remove('active');
+        };
+
+        // Закрытие по клику вне окна
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) closeModal();
+        });
+
+        window.saveEmployee = async function(e) {
+            e.preventDefault();
+            const saveBtn = document.getElementById('saveBtn');
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Сохранение...';
+
+            const id = document.getElementById('editId').value;
+            const payload = {
+                category: document.getElementById('f_category').value.trim(),
+                full_name: document.getElementById('f_full_name').value.trim(),
+                position: document.getElementById('f_position').value.trim(),
+                organization: document.getElementById('f_organization').value.trim(),
+                hire_date: document.getElementById('f_hire_date').value.trim(),
+                clothing_size: document.getElementById('f_clothing_size').value.trim(),
+                shoe_size: document.getElementById('f_shoe_size').value.trim(),
+                height: document.getElementById('f_height').value.trim(),
+                summer_issue_date: document.getElementById('f_summer_issue_date').value.trim(),
+                winter_issue_date: document.getElementById('f_winter_issue_date').value.trim(),
+                status: document.getElementById('f_status').value,
+                comments: document.getElementById('f_comments').value.trim()
+            };
+
+            let error;
+            if (id) {
+                // Обновление
+                const res = await supabase.from('employees_siz').update(payload).eq('id', id);
+                error = res.error;
+            } else {
+                // Добавление
+                const res = await supabase.from('employees_siz').insert(payload);
+                error = res.error;
+            }
+
+            if (error) {
+                alert('Ошибка сохранения: ' + error.message);
+            } else {
+                closeModal();
+                await loadData();
+                populateFilters(); // На случай, если добавлена новая организация/категория
+                renderTable();
+            }
+            
+            saveBtn.disabled = false;
+            saveBtn.textContent = id ? '💾 Обновить' : '💾 Добавить';
+        };
+
         ['filterName', 'filterOrg', 'filterCategory', 'filterStatus'].forEach(id => {
             document.getElementById(id).addEventListener('input', renderTable);
             document.getElementById(id).addEventListener('change', renderTable);
