@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход в HSE Portal</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .login-box {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            margin: 0 0 1.5rem 0;
+            color: #2c3e50;
+            text-align: center;
+        }
+        input {
+            width: 100%;
+            margin-bottom: 1rem;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        button:hover {
+            background: #5568d3;
+        }
+        #error {
+            color: #e74c3c;
+            font-size: 0.9em;
+            margin-top: 1rem;
+            text-align: center;
+            min-height: 1.2em;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-box">
+        <h2>🛡️ HSE Portal</h2>
+        <input type="email" id="email" placeholder="Email" autocomplete="email">
+        <input type="password" id="password" placeholder="Пароль" autocomplete="current-password">
+        <button onclick="handleLogin()">Войти</button>
+        <p id="error"></p>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // ВАЖНО: Замените на ваши значения из Supabase
+        const SUPABASE_URL = 'https://xtvfliynzoqscbfsdejj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0dmZsaXluem9xc2NiZnNkZWpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjAzODYsImV4cCI6MjEwODgzNjM4Nn0._fslUCBVos6btO819t_GYQfdPiuWRbczR7AfhpJXZ8E';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+window.handleLogin = async function() {
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
+    
+    console.log('Попытка входа:', email);
+    
+    const { data, error } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password,
+    });
+
+    console.log('Результат:', { data, error });
+
+    if (error) {
+        console.error('Ошибка входа:', error);
+        document.getElementById('error').innerText = error.message;
+    } else {
+        console.log('Успешный вход:', data.user);
+        await checkRoleAndRedirect(data.user.id);
+    }
+};
+
+        async function checkRoleAndRedirect(userId) {
+            const { data: profile, error } = await supabase
+                .from('profiles')
+                .select('role, full_name')
+                .eq('id', userId)
+                .single();
+
+            if (error || !profile) {
+                document.getElementById('error').innerText = "Профиль не найден. Обратитесь к администратору.";
+                await supabase.auth.signOut();
+                return;
+            }
+
+            localStorage.setItem('user_role', profile.role);
+            localStorage.setItem('user_name', profile.full_name || 'Пользователь');
+            localStorage.setItem('user_id', userId);
+            
+            window.location.href = 'dashboard.html';
+        }
+    </script>
+</body>
+</html>
