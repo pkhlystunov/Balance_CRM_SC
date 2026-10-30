@@ -153,46 +153,59 @@
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
         
-        // ⚠️ ЗАМЕНИТЕ НА ВАШИ ЗНАЧЕНИЯ
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         async function init() {
+            console.log('🔍 Начало инициализации dashboard...');
+            
             const { data: { session } } = await supabase.auth.getSession();
             
             if (!session) {
+                console.log('❌ Нет сессии, перенаправление на index.html');
                 window.location.href = 'index.html';
                 return;
             }
 
+            console.log('✅ Сессия найдена');
+
             const role = localStorage.getItem('user_role');
             const userName = localStorage.getItem('user_name');
             
-            // Отладка — посмотрите в консоли браузера (F12)
-            console.log('🔍 Отладка dashboard:');
-            console.log('  Роль:', role);
-            console.log('  Имя:', userName);
-            console.log('  ID:', localStorage.getItem('user_id'));
+            console.log('🔍 Отладка:');
+            console.log('  Роль из localStorage:', role);
+            console.log('  Имя из localStorage:', userName);
+            console.log('  ID из localStorage:', localStorage.getItem('user_id'));
+
+            if (!role) {
+                console.warn('⚠️ Роль не найдена в localStorage!');
+            }
 
             document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || 'неизвестно'})`;
 
             // Показываем плитки для admin и engineer
             if (role === 'admin' || role === 'engineer') {
+                console.log('✅ Пользователь имеет роль admin или engineer');
+                
                 const cardControl = document.getElementById('card-control');
                 const cardAnalytics = document.getElementById('card-analytics');
                 
                 if (cardControl) {
                     cardControl.style.display = 'block';
                     console.log('✅ Показана плитка "Контроль ОТиПБ"');
+                } else {
+                    console.error('❌ Элемент card-control не найден!');
                 }
                 
                 if (cardAnalytics) {
                     cardAnalytics.style.display = 'block';
                     console.log('✅ Показана плитка "Аналитика тестирования"');
+                } else {
+                    console.error('❌ Элемент card-analytics не найден!');
                 }
+            } else {
+                console.log('⚠️ Пользователь не admin и не engineer, плитки скрыты');
             }
 
             // Кнопка "Пользователи" только для админов
