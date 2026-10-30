@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Тестирование по охране труда</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f4f6f9;
+            padding: 20px;
+        }
+        .container {
+            max-width: 950px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #1a3e60;
+            border-bottom: 3px solid #e0e7ef;
+            padding-bottom: 12px;
+            margin-bottom: 20px;
+            font-weight: 500;
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .controls label {
+            font-weight: 600;
+            color: #1a3e60;
+        }
+        .controls select {
+            padding: 8px 14px;
+            border-radius: 6px;
+            border: 1px solid #b0c4d9;
+            background: white;
+            font-size: 1rem;
+            min-width: 200px;
+        }
+        .btn {
+            background: #1a3e60;
+            color: white;
+            border: none;
+            padding: 9px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background 0.2s;
+        }
+        .btn:hover:not(:disabled) {
+            background: #0f2a42;
+        }
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .btn-secondary {
+            background: #6c7a8d;
+        }
+        .btn-secondary:hover:not(:disabled) {
+            background: #4e5b6b;
+        }
+        .btn-success {
+            background: #2a7d4f;
+        }
+        .btn-success:hover:not(:disabled) {
+            background: #1e5f3b;
+        }
+        .hidden {
+            display: none !important;
+        }
+        .person-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            background: #f0f4fa;
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        .person-fields div {
+            flex: 1 1 200px;
+        }
+        .person-fields label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 4px;
+            color: #1a3e60;
+        }
+        .person-fields input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid #b0c4d9;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        .question-block {
+            margin: 16px 0;
+            border: 1px solid #dde4ec;
+            border-radius: 8px;
+            padding: 16px 20px;
+            background: #fafcff;
+        }
+        .question-block p {
+            font-weight: 600;
+            margin-bottom: 10px;
+            font-size: 1.05rem;
+        }
+        .question-block label {
+            display: block;
+            margin: 6px 0;
+            cursor: pointer;
+        }
+        .question-block input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.1);
+        }
+        #resultArea {
+            margin-top: 25px;
+            border-top: 2px solid #dde4ec;
+            padding-top: 20px;
+        }
+        .result-summary {
+            background: #e9f3ff;
+            padding: 15px 20px;
+            border-radius: 8px;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        .result-item {
+            display: flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-bottom: 1px solid #eaeef4;
+            flex-wrap: wrap;
+        }
+        .result-item .q {
+            flex: 1 1 200px;
+            font-weight: 500;
+        }
+        .result-item .user-answer {
+            flex: 0 0 180px;
+            color: #2c3e50;
+        }
+        .result-item .correct-answer {
+            flex: 0 0 180px;
+            color: #1a6b3b;
+            font-weight: 500;
+        }
+        .result-item .status {
+            flex: 0 0 80px;
+            text-align: center;
+            font-weight: 600;
+        }
+        .status.correct {
+            color: #1e7e34;
+        }
+        .status.wrong {
+            color: #b13e3e;
+        }
+        .print-btn {
+            margin-top: 15px;
+            margin-right: 10px;
+        }
+        @media print {
+            .controls,
+            .person-fields,
+            #questionsArea,
+            #finishArea,
+            .btn,
+            .print-btn,
+            #startBtn,
+            #finishBtn,
+            #resetBtn,
+            #finishHint {
+                display: none !important;
+            }
+            #resultArea {
+                display: block !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .result-summary {
+                background: none !important;
+                border: 1px solid #000;
+                padding: 10px;
+                margin-bottom: 15px;
+            }
+            .result-item {
+                border-bottom: 1px solid #ccc;
+            }
+            .container {
+                box-shadow: none !important;
+                padding: 10px !important;
+                max-width: 100% !important;
+            }
+            body {
+                background: white !important;
+                padding: 0 !important;
+            }
+            .status.correct {
+                color: green;
+            }
+            .status.wrong {
+                color: red;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🛡️ Тестирование по охране труда</h1>
+        
+        <div class="controls">
+            <label for="programSelect">Выберите программу:</label>
+            <select id="programSelect"></select>
+            <button class="btn" id="startBtn">▶ Начать тест</button>
+            <button class="btn btn-secondary" id="resetBtn">↺ Сбросить</button>
+        </div>
+
+        <div class="person-fields hidden" id="personFields">
+            <div>
+                <label for="fioInput">ФИО работника</label>
+                <input type="text" id="fioInput" placeholder="Иванов Иван Иванович">
+            </div>
+            <div>
+                <label for="positionInput">Должность</label>
+                <input type="text" id="positionInput" placeholder="Инженер">
+            </div>
+        </div>
+
+        <div id="questionsArea" class="hidden"></div>
+
+        <div id="finishArea" class="hidden">
+            <button class="btn btn-success" id="finishBtn" disabled>✔ Завершить тест</button>
+            <span id="finishHint" style="margin-left: 15px; color: #666;"></span>
+        </div>
+
+        <div id="resultArea" class="hidden"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        
+        // ⚠️ ЗАМЕНИТЕ НА ВАШИ ЗНАЧЕНИЯ
+        const SUPABASE_URL = 'https://xtvfliynzoqscbfsdejj.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0dmZsaXluem9xc2NiZnNkZWpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjAzODYsImV4cCI6MjEwODgzNjM4Nn0._fslUCBVos6btO819t_GYQfdPiuWRbczR7AfhpJXZ8E';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        // Состояние
+        let programs = [];
+        let selectedQuestions = [];
+        let userAnswers = [];
+        let testFinished = false;
+        let currentProgramId = null;
+        let currentProgramName = '';
+
+        // Элементы
+        const programSelect = document.getElementById('programSelect');
+        const startBtn = document.getElementById('startBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const finishBtn = document.getElementById('finishBtn');
+        const finishHint = document.getElementById('finishHint');
+        const questionsArea = document.getElementById('questionsArea');
+        const finishArea = document.getElementById('finishArea');
+        const resultArea = document.getElementById('resultArea');
+        const personFields = document.getElementById('personFields');
+        const fioInput = document.getElementById('fioInput');
+        const positionInput = document.getElementById('positionInput');
+
+        // Загрузка программ
+        async function loadPrograms() {
+            const { data, error } = await supabase
+                .from('test_programs')
+                .select('*')
+                .order('name');
+
+            if (error) {
+                console.error('Ошибка загрузки программ:', error);
+                alert('Ошибка загрузки программ');
+                return;
+            }
+
+            programs = data;
+            programSelect.innerHTML = '';
+            programs.forEach(p => {
+                const opt = document.createElement('option');
+                opt.value = p.id;
+                opt.textContent = p.name;
+                programSelect.appendChild(opt);
+            });
+        }
+
+        // Загрузка вопросов для выбранной программы
+        async function loadQuestions(programId) {
+            const { data, error } = await supabase
+                .from('test_questions')
+                .select('*')
+                .eq('program_id', programId);
+
+            if (error) {
+                console.error('Ошибка загрузки вопросов:', error);
+                return [];
+            }
+
+            return data;
+        }
+
+        // Перемешивание массива
+        function shuffleArray(arr) {
+            const shuffled = arr.slice();
+            for (let i = shuffled.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+            }
+            return shuffled;
+        }
+
+        // Сброс теста
+        function resetTest() {
+            currentProgramId = null;
+            currentProgramName = '';
+            selectedQuestions = [];
+            userAnswers = [];
+            testFinished = false;
+            questionsArea.innerHTML = '';
+            questionsArea.classList.add('hidden');
+            finishArea.classList.add('hidden');
+            resultArea.classList.add('hidden');
+            resultArea.innerHTML = '';
+            personFields.classList.add('hidden');
+            fioInput.value = '';
+            positionInput.value = '';
+            finishBtn.disabled = true;
+            finishHint.textContent = '';
+        }
+
+        // Начало теста
+        async function startTest() {
+            resetTest();
+            
+            const programId = programSelect.value;
+            if (!programId) {
+                alert('Выберите программу.');
+                return;
+            }
+
+            const program = programs.find(p => p.id === programId);
+            if (!program) {
+                alert('Программа не найдена.');
+                return;
+            }
+
+            currentProgramId = program.id;
+            currentProgramName = program.name;
+
+            const allQuestions = await loadQuestions(programId);
+            if (allQuestions.length === 0) {
+                alert('Вопросы не найдены.');
+                return;
+            }
+
+            const shuffled = shuffleArray(allQuestions);
+            selectedQuestions = shuffled.slice(0, 5);
+            userAnswers = new Array(selectedQuestions.length).fill(-1);
+
+            personFields.classList.remove('hidden');
+            renderQuestions();
+            questionsArea.classList.remove('hidden');
+            finishArea.classList.remove('hidden');
+            resultArea.classList.add('hidden');
+            finishBtn.disabled = true;
+            finishHint.textContent = 'Заполните ФИО, должность и ответьте на все вопросы';
+            checkCompletion();
+        }
+
+        // Отрисовка вопросов
+        function renderQuestions() {
+            if (!selectedQuestions.length) {
+                questionsArea.innerHTML = '<p>Нет вопросов.</p>';
+                return;
+            }
+
+            let html = '';
+            selectedQuestions.forEach((q, idx) => {
+                html += `<div class="question-block" data-qidx="${idx}">`;
+                html += `<p>${idx+1}. ${q.question_text}</p>`;
+                const options = q.options;
+                options.forEach((opt, optIdx) => {
+                    const checked = (userAnswers[idx] === optIdx) ? 'checked' : '';
+                    html += `<label>
+                        <input type="radio" name="q${idx}" value="${optIdx}" ${checked} data-qidx="${idx}" data-optidx="${optIdx}">
+                        ${opt}
+                    </label>`;
+                });
+                html += `</div>`;
+            });
+
+            questionsArea.innerHTML = html;
+
+            const radios = questionsArea.querySelectorAll('input[type="radio"]');
+            radios.forEach(radio => {
+                radio.addEventListener('change', function(e) {
+                    const qIdx = parseInt(this.dataset.qidx);
+                    const optIdx = parseInt(this.dataset.optidx);
+                    if (!isNaN(qIdx) && !isNaN(optIdx)) {
+                        userAnswers[qIdx] = optIdx;
+                        checkCompletion();
+                    }
+                });
+            });
+        }
+
+        // Проверка заполнения
+        function checkCompletion() {
+            if (testFinished) {
+                finishBtn.disabled = true;
+                finishHint.textContent = 'Тест завершён';
+                return;
+            }
+
+            const fio = fioInput.value.trim();
+            const position = positionInput.value.trim();
+            const allAnswered = userAnswers.every(ans => ans !== -1);
+            const fieldsFilled = fio.length > 0 && position.length > 0;
+
+            if (fieldsFilled && allAnswered) {
+                finishBtn.disabled = false;
+                finishHint.textContent = '';
+            } else {
+                finishBtn.disabled = true;
+                let hint = '';
+                if (!fieldsFilled) hint += 'Заполните ФИО и должность. ';
+                if (!allAnswered) hint += 'Ответьте на все вопросы.';
+                finishHint.textContent = hint;
+            }
+        }
+
+        fioInput.addEventListener('input', checkCompletion);
+        positionInput.addEventListener('input', checkCompletion);
+
+        // Завершение теста
+        async function finishTest() {
+            if (testFinished) return;
+
+            const fio = fioInput.value.trim();
+            const position = positionInput.value.trim();
+
+            if (!fio || !position) {
+                alert('Заполните ФИО и должность.');
+                return;
+            }
+
+            const unanswered = userAnswers.some(ans => ans === -1);
+            if (unanswered) {
+                if (!confirm('Вы ответили не на все вопросы. Завершить тест всё равно?')) {
+                    return;
+                }
+            }
+
+            testFinished = true;
+            finishBtn.disabled = true;
+            finishHint.textContent = 'Тест завершён';
+
+            const results = [];
+            let correctCount = 0;
+
+            selectedQuestions.forEach((q, idx) => {
+                const userAns = userAnswers[idx];
+                const isCorrect = (userAns === q.correct_index);
+                if (isCorrect) correctCount++;
+                results.push({
+                    question: q.question_text,
+                    options: q.options,
+                    userIndex: userAns,
+                    correctIndex: q.correct_index,
+                    isCorrect: isCorrect
+                });
+            });
+
+            const total = results.length;
+            const percent = Math.round((correctCount / total) * 100);
+            const passed = percent >= 70;
+
+            // Сохранение результата в БД
+            const { error: saveError } = await supabase
+                .from('test_results')
+                .insert({
+                    employee_name: fio,
+                    employee_position: position,
+                    program_id: currentProgramId,
+                    score: correctCount,
+                    total_questions: total,
+                    percentage: percent,
+                    passed: passed,
+                    answers: results
+                });
+
+            if (saveError) {
+                console.error('Ошибка сохранения результата:', saveError);
+                alert('Ошибка сохранения результата. Обратитесь к администратору.');
+                return;
+            }
+
+            // Отображение результата
+            let resultHtml = `<div class="result-summary">
+                <strong>Программа:</strong> ${currentProgramName}<br>
+                <strong>ФИО:</strong> ${fio}<br>
+                <strong>Должность:</strong> ${position}<br>
+                <strong>Правильных ответов:</strong> ${correctCount} из ${total} (${percent}%)<br>
+                <strong>Результат:</strong> ${passed ? '✅ ЗАЧТЕНО' : '❌ НЕ ЗАЧТЕНО'}
+            </div>`;
+            
+            resultHtml += `<div style="margin-bottom:10px; font-weight:600;">Детали ответов:</div>`;
+            resultHtml += `<div id="resultList">`;
+            
+            results.forEach((r, idx) => {
+                const userText = (r.userIndex !== -1) ? r.options[r.userIndex] : '— (не выбран)';
+                const correctText = r.options[r.correctIndex];
+                const statusClass = r.isCorrect ? 'correct' : 'wrong';
+                const statusText = r.isCorrect ? '✔ Верно' : '✘ Неверно';
+                
+                resultHtml += `<div class="result-item">
+                    <span class="q">${idx+1}. ${r.question}</span>
+                    <span class="user-answer">Ваш ответ: ${userText}</span>
+                    <span class="correct-answer">Правильный: ${correctText}</span>
+                    <span class="status ${statusClass}">${statusText}</span>
+                </div>`;
+            });
+            
+            resultHtml += `</div>`;
+            resultHtml += `<div style="margin-top:15px;">
+                <button class="btn print-btn" onclick="window.print()">🖨️ Сохранить как PDF</button>
+            </div>`;
+
+            resultArea.innerHTML = resultHtml;
+            resultArea.classList.remove('hidden');
+
+            const radios = questionsArea.querySelectorAll('input[type="radio"]');
+            radios.forEach(r => r.disabled = true);
+        }
+
+        // Обработчики
+        startBtn.addEventListener('click', startTest);
+        resetBtn.addEventListener('click', resetTest);
+        finishBtn.addEventListener('click', finishTest);
+        programSelect.addEventListener('change', resetTest);
+
+        // Инициализация
+        loadPrograms();
+        resetTest();
+    </script>
+</body>
+</html>
