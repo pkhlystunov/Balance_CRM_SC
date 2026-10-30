@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <title>Учет обучения и медосмотров</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
+        
+        header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; transition: background 0.3s; }
+        .btn-secondary { background: #95a5a6; color: white; }
+        .btn-secondary:hover { background: #7f8c8d; }
+        .btn-danger { background: #e74c3c; color: white; }
+        .btn-danger:hover { background: #c0392b; }
+        .btn-success { background: #27ae60; color: white; }
+        .btn-success:hover { background: #229954; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
+        
+        .container { padding: 2rem; max-width: 100%; margin: 0 auto; }
+        
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; flex-wrap: wrap; gap: 15px; }
+        .top-bar h2 { color: #2c3e50; }
+        
+        .filters { background: white; padding: 1.5rem; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 2rem; display: flex; gap: 15px; flex-wrap: wrap; align-items: end; }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group label { font-size: 13px; color: #555; font-weight: 600; }
+        .filter-group input, .filter-group select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; min-width: 200px; }
+        
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 15px; margin-bottom: 2rem; }
+        .stat-card { background: white; padding: 1.2rem; border-radius: 10px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); text-align: center; }
+        .stat-card .number { font-size: 2rem; font-weight: 700; color: #2c3e50; }
+        .stat-card .label { color: #7f8c8d; font-size: 0.85rem; margin-top: 0.3rem; }
+        .stat-card.success .number { color: #27ae60; }
+        .stat-card.warning .number { color: #f39c12; }
+        .stat-card.danger .number { color: #e74c3c; }
+
+        .table-wrapper { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow-x: auto; max-height: 70vh; position: relative; }
+        table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 3000px; }
+        
+        th, td { padding: 8px 6px; border: 1px solid #ecf0f1; text-align: center; white-space: nowrap; }
+        th { background: #34495e; color: white; position: sticky; top: 0; z-index: 10; font-weight: 500; }
+        
+        .sticky-col { position: sticky; left: 0; background: white; z-index: 5; text-align: left; min-width: 200px; font-weight: 600; }
+        .sticky-col-2 { position: sticky; left: 200px; background: white; z-index: 5; text-align: left; min-width: 150px; }
+        .sticky-col-3 { position: sticky; left: 350px; background: white; z-index: 5; text-align: center; min-width: 100px; }
+        th.sticky-col, th.sticky-col-2, th.sticky-col-3 { background: #2c3e50; z-index: 11; }
+        
+        tr:hover td { background: #f8f9fa; }
+        tr:hover .sticky-col, tr:hover .sticky-col-2, tr:hover .sticky-col-3 { background: #f8f9fa; }
+        
+        .row-fired { opacity: 0.6; background: #f9f9f9 !important; }
+        .row-fired .sticky-col, .row-fired .sticky-col-2, .row-fired .sticky-col-3 { background: #f9f9f9 !important; }
+
+        .cell-ok { background: #d4edda; color: #155724; }
+        .cell-warning { background: #fff3cd; color: #856404; }
+        .cell-expired { background: #f8d7da; color: #721c24; font-weight: bold; }
+        .cell-nt { background: #e2e3e5; color: #383d41; }
+        .cell-empty { background: #ffffff; color: #999; }
+
+        .status-badge { padding: 4px 10px; border-radius: 12px; font-size: 11px; font-weight: 600; display: inline-block; }
+        .status-active { background: #d4edda; color: #155724; }
+        .status-fired { background: #e2e3e5; color: #383d41; }
+
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
+        
+        .form-section { margin-bottom: 1.5rem; }
+        .form-section h3 { color: #2c3e50; margin-bottom: 1rem; font-size: 1.1rem; border-left: 4px solid #3498db; padding-left: 10px; }
+        .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; }
+        .form-group label { font-size: 12px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select { padding: 8px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px; }
+        
+        .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
+    </style>
+</head>
+<body>
+    <header>
+        <a href="dashboard.html">
+            <img src="icon-192.png" alt="Логотип" style="width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: white; padding: 2px;">
+            <h1>Учет обучения и медосмотров</h1>
+        </a>
+        <div class="header-actions">
+            <a href="dashboard.html" class="btn btn-secondary">← Назад</a>
+            <button class="btn btn-danger" onclick="handleLogout()">Выход</button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="top-bar">
+            <h2>База сотрудников</h2>
+            <button class="btn btn-success" onclick="openModal()">➕ Добавить сотрудника</button>
+        </div>
+
+        <div class="filters">
+            <div class="filter-group">
+                <label>Поиск по ФИО</label>
+                <input type="text" id="filterName" placeholder="Введите фамилию...">
+            </div>
+            <div class="filter-group">
+                <label>Категория</label>
+                <select id="filterCategory">
+                    <option value="">Все категории</option>
+                    <option value="РАБОЧИЕ">Рабочие</option>
+                    <option value="ИТР">ИТР</option>
+                </select>
+            </div>
+            <div class="filter-group">
+                <label>Статус</label>
+                <select id="filterStatus">
+                    <option value="">Все</option>
+                    <option value="Работает">Работает</option>
+                    <option value="Уволен">Уволен</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card"><div class="number" id="statTotal">0</div><div class="label">Всего сотрудников</div></div>
+            <div class="stat-card success"><div class="number" id="statActive">0</div><div class="label">Работает</div></div>
+            <div class="stat-card danger"><div class="number" id="statFired">0</div><div class="label">Уволено</div></div>
+            <div class="stat-card warning"><div class="number" id="statWarning">0</div><div class="label">Истекает скоро</div></div>
+        </div>
+
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th class="sticky-col">ФИО</th>
+                        <th class="sticky-col-2">Должность</th>
+                        <th class="sticky-col-3">Статус</th>
+                        <th>МО</th><th>до</th><th>ОПО</th><th>до</th>
+                        <th>ОТ(А)</th><th>до</th><th>ОТ(рук)</th><th>до</th><th>ОТ(Б)</th><th>до</th><th>ОТ(В)</th><th>до</th>
+                        <th>РПО ОТ(В)</th><th>до</th><th>Удост. проф.</th><th>до</th><th>ПП</th><th>до</th><th>СИЗ ОТ</th><th>до</th>
+                        <th>ПТМ</th><th>до</th><th>ПожБез</th><th>до</th><th>ПожБез журн.</th>
+                        <th>А1</th><th>до</th><th>Б.9.31</th><th>до</th><th>ЭБ Г.1</th><th>до</th><th>ГАЗ Б.7</th><th>до</th><th>ТЕПЛО Г.2</th><th>до</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    <tr><td colspan="38" class="empty-state">Загрузка данных...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Добавить сотрудника</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="editForm" onsubmit="saveData(event)">
+                <input type="hidden" id="editId">
+                
+                <div class="form-section">
+                    <h3>Основная информация</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>Категория</label><select id="f_category"><option value="РАБОЧИЕ">Рабочие</option><option value="ИТР">ИТР</option></select></div>
+                        <div class="form-group"><label>ФИО *</label><input type="text" id="f_full_name" required></div>
+                        <div class="form-group"><label>Должность</label><input type="text" id="f_position"></div>
+                        <div class="form-group"><label>Дата приема</label><input type="text" id="f_hire_date" placeholder="ДД.ММ.ГГГГ"></div>
+                        <div class="form-group"><label>Статус</label><select id="f_status"><option value="Работает">Работает</option><option value="Уволен">Уволен</option></select></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Медицина</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>МО (дата)</label><input type="text" id="f_mo_date" placeholder="ДД.ММ.ГГГГ"></div>
+                        <div class="form-group"><label>МО (действителен до)</label><input type="text" id="f_mo_valid" placeholder="ДД.ММ.ГГГГ"></div>
+                        <div class="form-group"><label>ОПО (дата)</label><input type="text" id="f_opo_date" placeholder="ДД.ММ.ГГГГ"></div>
+                        <div class="form-group"><label>ОПО (действителен до)</label><input type="text" id="f_opo_valid" placeholder="ДД.ММ.ГГГГ"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Охрана труда</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>ОТ (А) дата</label><input type="text" id="f_ot_a_date"></div>
+                        <div class="form-group"><label>ОТ (А) до</label><input type="text" id="f_ot_a_valid"></div>
+                        <div class="form-group"><label>ОТ (рук) дата</label><input type="text" id="f_ot_ruk_date"></div>
+                        <div class="form-group"><label>ОТ (рук) до</label><input type="text" id="f_ot_ruk_valid"></div>
+                        <div class="form-group"><label>ОТ (Б) дата</label><input type="text" id="f_ot_b_date"></div>
+                        <div class="form-group"><label>ОТ (Б) до</label><input type="text" id="f_ot_b_valid"></div>
+                        <div class="form-group"><label>ОТ (В) дата</label><input type="text" id="f_ot_v_date"></div>
+                        <div class="form-group"><label>ОТ (В) до</label><input type="text" id="f_ot_v_valid"></div>
+                        <div class="form-group"><label>РПО ОТ (В) дата</label><input type="text" id="f_rpo_ot_v_date"></div>
+                        <div class="form-group"><label>РПО ОТ (В) до</label><input type="text" id="f_rpo_ot_v_valid"></div>
+                        <div class="form-group"><label>Удост. профессии дата</label><input type="text" id="f_udost_prof_date"></div>
+                        <div class="form-group"><label>Удост. профессии до</label><input type="text" id="f_udost_prof_valid"></div>
+                        <div class="form-group"><label>ПП дата</label><input type="text" id="f_pp_date"></div>
+                        <div class="form-group"><label>ПП до</label><input type="text" id="f_pp_valid"></div>
+                        <div class="form-group"><label>СИЗ ОТ дата</label><input type="text" id="f_siz_ot_date"></div>
+                        <div class="form-group"><label>СИЗ ОТ до</label><input type="text" id="f_siz_ot_valid"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Пожарная безопасность</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>ПТМ дата</label><input type="text" id="f_ptm_date"></div>
+                        <div class="form-group"><label>ПТМ до</label><input type="text" id="f_ptm_valid"></div>
+                        <div class="form-group"><label>ПожБез (удост) дата</label><input type="text" id="f_pozhbez_date"></div>
+                        <div class="form-group"><label>ПожБез (удост) до</label><input type="text" id="f_pozhbez_valid"></div>
+                        <div class="form-group" style="grid-column: 1 / -1;"><label>ПожБез журнал</label><input type="text" id="f_pozhbez_journal"></div>
+                    </div>
+                </div>
+
+                <div class="form-section">
+                    <h3>Промышленная безопасность</h3>
+                    <div class="form-grid">
+                        <div class="form-group"><label>А1 дата</label><input type="text" id="f_a1_date"></div>
+                        <div class="form-group"><label>А1 до</label><input type="text" id="f_a1_valid"></div>
+                        <div class="form-group"><label>Б.9.31. дата</label><input type="text" id="f_b931_date"></div>
+                        <div class="form-group"><label>Б.9.31. до</label><input type="text" id="f_b931_valid"></div>
+                        <div class="form-group"><label>ЭБ Г.1 дата</label><input type="text" id="f_eb_g1_date"></div>
+                        <div class="form-group"><label>ЭБ Г.1 до</label><input type="text" id="f_eb_g1_valid"></div>
+                        <div class="form-group"><label>ГАЗ Б.7 дата</label><input type="text" id="f_gaz_b7_date"></div>
+                        <div class="form-group"><label>ГАЗ Б.7 до</label><input type="text" id="f_gaz_b7_valid"></div>
+                        <div class="form-group"><label>ТЕПЛО Г.2 дата</label><input type="text" id="f_teplo_g2_date"></div>
+                        <div class="form-group"><label>ТЕПЛО Г.2 до</label><input type="text" id="f_teplo_g2_valid"></div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn btn-success" id="saveBtn">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let allData = [];
+
+        async function init() {
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
+            const role = localStorage.getItem('user_role');
+            if (role !== 'admin' && role !== 'engineer') {
+                alert('Доступ только для администраторов и инженеров');
+                window.location.href = 'dashboard.html'; return;
+            }
+            await loadData();
+            renderTable();
+        }
+
+        async function loadData() {
+            const { data, error } = await supabase.from('employees_training').select('*').order('category').order('full_name');
+            if (error) { console.error(error); return; }
+            allData = data || [];
+        }
+
+        function parseDate(str) {
+            if (!str || str.trim() === '' || str.toLowerCase() === 'н/т' || str.toLowerCase() === 'продлить' || str.toLowerCase() === 'бессрочно') return null;
+            const parts = str.trim().split('.');
+            if (parts.length === 3) {
+                return new Date(parts[2], parts[1] - 1, parts[0]);
+            }
+            return null;
+        }
+
+        function getStatus(dateStr) {
+            if (!dateStr) return { class: 'cell-empty', text: '' };
+            const val = dateStr.trim().toLowerCase();
+            if (val === 'н/т') return { class: 'cell-nt', text: 'н/т' };
+            if (val === 'продлить' || val === 'бессрочно') return { class: 'cell-ok', text: dateStr };
+            
+            const date = parseDate(dateStr);
+            if (!date) return { class: 'cell-empty', text: dateStr };
+            
+            const now = new Date();
+            const diffTime = date - now;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays < 0) return { class: 'cell-expired', text: dateStr, title: `Просрочено на ${Math.abs(diffDays)} дн.` };
+            if (diffDays <= 60) return { class: 'cell-warning', text: dateStr, title: `Истекает через ${diffDays} дн.` };
+            return { class: 'cell-ok', text: dateStr };
+        }
+
+        function getFilteredData() {
+            const name = document.getElementById('filterName').value.toLowerCase();
+            const cat = document.getElementById('filterCategory').value;
+            const status = document.getElementById('filterStatus').value;
+            return allData.filter(row => {
+                if (name && !row.full_name.toLowerCase().includes(name)) return false;
+                if (cat && row.category !== cat) return false;
+                if (status && row.status !== status) return false;
+                return true;
+            });
+        }
+
+        function updateStats(filtered) {
+            let active = 0, fired = 0, warning = 0;
+            const dateFields = ['mo_valid','opo_valid','ot_a_valid','ot_ruk_valid','ot_b_valid','ot_v_valid','rpo_ot_v_valid','udost_prof_valid','pp_valid','siz_ot_valid','ptm_valid','pozhbez_valid','a1_valid','b931_valid','eb_g1_valid','gaz_b7_valid','teplo_g2_valid'];
+            
+            filtered.forEach(row => {
+                if (row.status === 'Работает') active++;
+                else if (row.status === 'Уволен') fired++;
+                
+                if (row.status === 'Работает') {
+                    dateFields.forEach(field => {
+                        const status = getStatus(row[field]);
+                        if (status.class === 'cell-warning') warning++;
+                    });
+                }
+            });
+            document.getElementById('statTotal').textContent = filtered.length;
+            document.getElementById('statActive').textContent = active;
+            document.getElementById('statFired').textContent = fired;
+            document.getElementById('statWarning').textContent = warning;
+        }
+
+        function renderTable() {
+            const filtered = getFilteredData();
+            updateStats(filtered);
+            const tbody = document.getElementById('tableBody');
+            
+            if (filtered.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="38" class="empty-state">Нет данных</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = filtered.map(row => {
+                const fields = ['mo_date','mo_valid','opo_date','opo_valid','ot_a_date','ot_a_valid','ot_ruk_date','ot_ruk_valid','ot_b_date','ot_b_valid','ot_v_date','ot_v_valid','rpo_ot_v_date','rpo_ot_v_valid','udost_prof_date','udost_prof_valid','pp_date','pp_valid','siz_ot_date','siz_ot_valid','ptm_date','ptm_valid','pozhbez_date','pozhbez_valid','pozhbez_journal','a1_date','a1_valid','b931_date','b931_valid','eb_g1_date','eb_g1_valid','gaz_b7_date','gaz_b7_valid','teplo_g2_date','teplo_g2_valid'];
+                
+                const cells = fields.map(f => {
+                    const status = getStatus(row[f]);
+                    return `<td class="${status.class}" title="${status.title || ''}">${status.text || '—'}</td>`;
+                }).join('');
+
+                const statusClass = row.status === 'Уволен' ? 'status-fired' : 'status-active';
+                const statusLabel = row.status === 'Уволен' ? '❌ Уволен' : '✅ Работает';
+                const rowClass = row.status === 'Уволен' ? 'row-fired' : '';
+
+                return `
+                    <tr onclick="openModal('${row.id}')" style="cursor: pointer;" class="${rowClass}">
+                        <td class="sticky-col">${row.full_name}</td>
+                        <td class="sticky-col-2">${row.position || '—'}</td>
+                        <td class="sticky-col-3"><span class="status-badge ${statusClass}">${statusLabel}</span></td>
+                        ${cells}
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        window.openModal = function(id) {
+            const form = document.getElementById('editForm');
+            form.reset();
+            document.getElementById('editId').value = '';
+            
+            if (id) {
+                const row = allData.find(r => r.id === id);
+                if (!row) return;
+                document.getElementById('editId').value = id;
+                document.getElementById('modalTitle').textContent = `Редактировать: ${row.full_name}`;
+                
+                const fields = ['category','full_name','position','hire_date','status','mo_date','mo_valid','opo_date','opo_valid','ot_a_date','ot_a_valid','ot_ruk_date','ot_ruk_valid','ot_b_date','ot_b_valid','ot_v_date','ot_v_valid','rpo_ot_v_date','rpo_ot_v_valid','udost_prof_date','udost_prof_valid','pp_date','pp_valid','siz_ot_date','siz_ot_valid','ptm_date','ptm_valid','pozhbez_date','pozhbez_valid','pozhbez_journal','a1_date','a1_valid','b931_date','b931_valid','eb_g1_date','eb_g1_valid','gaz_b7_date','gaz_b7_valid','teplo_g2_date','teplo_g2_valid'];
+                fields.forEach(f => {
+                    const el = document.getElementById(`f_${f}`);
+                    if (el) el.value = row[f] || '';
+                });
+            } else {
+                document.getElementById('modalTitle').textContent = 'Добавить сотрудника';
+            }
+            document.getElementById('modal').classList.add('active');
+        };
+
+        window.closeModal = function() {
+            document.getElementById('modal').classList.remove('active');
+        };
+
+        window.saveData = async function(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            const fields = ['category','full_name','position','hire_date','status','mo_date','mo_valid','opo_date','opo_valid','ot_a_date','ot_a_valid','ot_ruk_date','ot_ruk_valid','ot_b_date','ot_b_valid','ot_v_date','ot_v_valid','rpo_ot_v_date','rpo_ot_v_valid','udost_prof_date','udost_prof_valid','pp_date','pp_valid','siz_ot_date','siz_ot_valid','ptm_date','ptm_valid','pozhbez_date','pozhbez_valid','pozhbez_journal','a1_date','a1_valid','b931_date','b931_valid','eb_g1_date','eb_g1_valid','gaz_b7_date','gaz_b7_valid','teplo_g2_date','teplo_g2_valid'];
+            
+            const payload = {};
+            fields.forEach(f => { payload[f] = document.getElementById(`f_${f}`).value.trim() || null; });
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true; btn.textContent = 'Сохранение...';
+
+            let error;
+            if (id) {
+                const res = await supabase.from('employees_training').update(payload).eq('id', id);
+                error = res.error;
+            } else {
+                const res = await supabase.from('employees_training').insert(payload);
+                error = res.error;
+            }
+            
+            if (error) { alert('Ошибка: ' + error.message); } 
+            else { closeModal(); await loadData(); renderTable(); }
+            
+            btn.disabled = false; btn.textContent = '💾 Сохранить';
+        };
+
+        ['filterName', 'filterCategory', 'filterStatus'].forEach(id => {
+            document.getElementById(id).addEventListener('input', renderTable);
+            document.getElementById(id).addEventListener('change', renderTable);
+        });
+
+        window.handleLogout = async function() {
+            await supabase.auth.signOut();
+            localStorage.clear();
+            window.location.href = 'index.html';
+        };
+
+        init();
+    </script>
+</body>
+</html>
