@@ -6,11 +6,7 @@
     <title>Рабочее место ОТиПБ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: #f4f6f9;
@@ -25,13 +21,11 @@
             align-items: center;
             box-shadow: 0 2px 4px rgba(0,0,0,0.1);
         }
-        header h1 {
-            font-size: 1.5rem;
-        }
+        header h1 { font-size: 1.5rem; }
         .user-info {
             display: flex;
             align-items: center;
-            gap: 1rem;
+            gap: 10px;
         }
         .btn-logout {
             background: #e74c3c;
@@ -41,26 +35,26 @@
             border-radius: 6px;
             cursor: pointer;
             font-size: 14px;
-            transition: background 0.3s;
         }
-        .btn-logout:hover {
-            background: #c0392b;
+        .btn-logout:hover { background: #c0392b; }
+        .btn-users {
+            background: #27ae60;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-decoration: none;
+            font-size: 14px;
+            display: none;
         }
+        .btn-users:hover { background: #229954; }
         .container {
             padding: 2rem;
             max-width: 1200px;
             margin: 0 auto;
         }
-        .welcome {
-            margin-bottom: 2rem;
-        }
-        .welcome h2 {
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-        .welcome p {
-            color: #7f8c8d;
-        }
+        .welcome { margin-bottom: 2rem; }
+        .welcome h2 { color: #2c3e50; margin-bottom: 0.5rem; }
+        .welcome p { color: #7f8c8d; }
         .grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -88,17 +82,9 @@
             color: #2c3e50;
             font-size: 1.3rem;
         }
-        .card p {
-            color: #7f8c8d;
-            line-height: 1.5;
-        }
-        .card-icon {
-            font-size: 2.5rem;
-            margin-bottom: 1rem;
-        }
-        .admin-only {
-            display: none;
-        }
+        .card p { color: #7f8c8d; line-height: 1.5; }
+        .card-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+        .admin-only { display: none; }
         .placeholder-card {
             border: 2px dashed #bdc3c7;
             background: transparent;
@@ -116,12 +102,7 @@
         <h1>🛡️ HSE Portal</h1>
         <div class="user-info">
             <span id="user-name">Загрузка...</span>
-            
-            <!-- Кнопка "Пользователи" (видна только админам) -->
-            <a href="users.html" id="btn-users" style="display:none; background:#27ae60; color:white; padding:8px 16px; border-radius:6px; text-decoration:none; font-size:14px; margin-right:10px;">
-                👥 Пользователи
-            </a>
-
+            <a href="users.html" class="btn-users" id="btn-users">👥 Пользователи</a>
             <button class="btn-logout" onclick="handleLogout()">Выход</button>
         </div>
     </header>
@@ -132,37 +113,37 @@
             <p>Выберите сервис для работы</p>
         </div>
 
-                <div class="grid">
-            <!-- Плитка 1: Ситуационный центр -->
-            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./" target="_blank" class="card">
+        <div class="grid">
+            <!-- Плитка 1: Ситуационный центр (для всех) -->
+            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./admin.html" target="_blank" class="card">
                 <div class="card-icon">📊</div>
                 <h3>Ситуационный центр</h3>
                 <p>Мониторинг инцидентов и оперативная сводка по охране труда.</p>
             </a>
 
-            <!-- Плитка 2: Контроль ОТиПБ (только для admin и engineer) -->
-            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./admin.html" target="_blank" class="card admin-only" id="card-control">
+            <!-- Плитка 2: Контроль ОТиПБ (только admin/engineer) -->
+            <a href="https://pkhlystunov.github.io/balance-cl-sc-v.4.0.1./" target="_blank" class="card admin-only" id="card-control">
                 <div class="card-icon">🛡️</div>
                 <h3>Контроль ОТиПБ</h3>
                 <p>Администрирование проверок, предписаний и контроля соблюдения требований.</p>
             </a>
 
-            <!-- Плитка 3: Тестирование по ОТ -->
+            <!-- Плитка 3: Тестирование по ОТ (для всех) -->
             <a href="https://pkhlystunov.github.io/Balance_CRM_SC/test-public.html" target="_blank" class="card">
                 <div class="card-icon">📝</div>
                 <h3>Тестирование по ОТ</h3>
                 <p>Проверка знаний сотрудников по охране труда и промышленной безопасности.</p>
             </a>
 
-            <!-- Плитка 4: Аналитика тестирования (только для admin и engineer) -->
+            <!-- Плитка 4: Аналитика тестирования (только admin/engineer) -->
             <a href="test-analytics.html" class="card admin-only" id="card-analytics">
                 <div class="card-icon">📈</div>
                 <h3>Аналитика тестирования</h3>
                 <p>Статистика прохождений тестов, результаты сотрудников, фильтры и отчёты.</p>
             </a>
-            
-            <!-- Заглушка для будущего сервиса -->
-            <div class="card" style="border: 2px dashed #ccc; background: transparent;">
+
+            <!-- Заглушка -->
+            <div class="card placeholder-card">
                 <div class="card-icon">➕</div>
                 <h3>Добавить сервис</h3>
                 <p>Здесь появится новый модуль.</p>
@@ -173,12 +154,13 @@
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
         
+        // ⚠️ ЗАМЕНИТЕ НА ВАШИ ЗНАЧЕНИЯ
         const SUPABASE_URL = 'https://xtvfliynzoqscbfsdejj.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inh0dmZsaXluem9xc2NiZnNkZWpqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTMyNjAzODYsImV4cCI6MjEwODgzNjM4Nn0._fslUCBVos6btO819t_GYQfdPiuWRbczR7AfhpJXZ8E';
         
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-                async function init() {
+        async function init() {
             const { data: { session } } = await supabase.auth.getSession();
             
             if (!session) {
@@ -189,17 +171,37 @@
             const role = localStorage.getItem('user_role');
             const userName = localStorage.getItem('user_name');
             
-            document.getElementById('user-name').innerText = `👤 ${userName} (${role})`;
+            // Отладка — посмотрите в консоли браузера (F12)
+            console.log('🔍 Отладка dashboard:');
+            console.log('  Роль:', role);
+            console.log('  Имя:', userName);
+            console.log('  ID:', localStorage.getItem('user_id'));
 
-            // Показываем плитку контроля для инженеров и админов
+            document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || 'неизвестно'})`;
+
+            // Показываем плитки для admin и engineer
             if (role === 'admin' || role === 'engineer') {
-                document.getElementById('card-control').classList.remove('admin-only');
-                document.getElementById('card-control').style.display = 'block';
+                const cardControl = document.getElementById('card-control');
+                const cardAnalytics = document.getElementById('card-analytics');
+                
+                if (cardControl) {
+                    cardControl.style.display = 'block';
+                    console.log('✅ Показана плитка "Контроль ОТиПБ"');
+                }
+                
+                if (cardAnalytics) {
+                    cardAnalytics.style.display = 'block';
+                    console.log('✅ Показана плитка "Аналитика тестирования"');
+                }
             }
 
-            // ✅ НОВОЕ: Показываем кнопку "Пользователи" только админам
+            // Кнопка "Пользователи" только для админов
             if (role === 'admin') {
-                document.getElementById('btn-users').style.display = 'inline-block';
+                const btnUsers = document.getElementById('btn-users');
+                if (btnUsers) {
+                    btnUsers.style.display = 'inline-block';
+                    console.log('✅ Показана кнопка "Пользователи"');
+                }
             }
         }
 
@@ -209,28 +211,7 @@
             window.location.href = 'index.html';
         };
 
-                async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
-            
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const role = localStorage.getItem('user_role');
-            const userName = localStorage.getItem('user_name');
-            
-            document.getElementById('user-name').innerText = `👤 ${userName} (${role})`;
-
-            // Показываем плитки для admin и engineer
-            if (role === 'admin' || role === 'engineer') {
-                document.getElementById('card-control').classList.remove('admin-only');
-                document.getElementById('card-control').style.display = 'block';
-                
-                document.getElementById('card-analytics').classList.remove('admin-only');
-                document.getElementById('card-analytics').style.display = 'block';
-            }
-        }
+        init();
     </script>
 </body>
 </html>
