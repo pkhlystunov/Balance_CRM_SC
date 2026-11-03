@@ -8,244 +8,255 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background: #f4f6f9;
-            min-height: 100vh;
-        }
-        header {
-            background: #2c3e50;
-            color: white;
-            padding: 1rem 2rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        header h1 { font-size: 1.5rem; }
-        .header-actions { display: flex; gap: 10px; align-items: center; }
-        .btn {
-            padding: 8px 16px;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            text-decoration: none;
-            display: inline-block;
-            transition: background 0.3s;
-        }
-        .btn-primary { background: #667eea; color: white; }
-        .btn-primary:hover { background: #5568d3; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
+        
+        header { background: #2c3e50; color: white; padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        header a { display: flex; align-items: center; gap: 12px; text-decoration: none; color: white; }
+        header h1 { margin: 0; font-size: 1.5rem; }
+        
+        .btn { padding: 8px 16px; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; text-decoration: none; display: inline-block; transition: background 0.3s; }
         .btn-secondary { background: #95a5a6; color: white; }
         .btn-secondary:hover { background: #7f8c8d; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-danger:hover { background: #c0392b; }
         .btn-success { background: #27ae60; color: white; }
         .btn-success:hover { background: #229954; }
+        .btn-primary { background: #3498db; color: white; }
+        .btn-primary:hover { background: #2980b9; }
         
         .container { padding: 2rem; max-width: 1200px; margin: 0 auto; }
         
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-        }
-        .page-header h2 { color: #2c3e50; }
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+        .top-bar h2 { color: #2c3e50; }
         
-        table {
-            width: 100%;
-            background: white;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            border-collapse: collapse;
-        }
-        th {
-            background: #34495e;
-            color: white;
-            padding: 1rem;
-            text-align: left;
-            font-weight: 500;
-        }
-        td {
-            padding: 1rem;
-            border-bottom: 1px solid #ecf0f1;
-        }
-        tr:last-child td { border-bottom: none; }
+        .user-list { background: white; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); overflow: hidden; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #34495e; color: white; padding: 12px; text-align: left; font-weight: 500; }
+        td { padding: 12px; border-bottom: 1px solid #ecf0f1; }
         tr:hover { background: #f8f9fa; }
         
-        .role-badge {
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-        }
+        .role-badge { padding: 4px 10px; border-radius: 12px; font-size: 12px; font-weight: 600; display: inline-block; }
         .role-admin { background: #e74c3c; color: white; }
-        .role-engineer { background: #f39c12; color: white; }
-        .role-user { background: #3498db; color: white; }
+        .role-engineer { background: #3498db; color: white; }
+        .role-chief { background: #9b59b6; color: white; }
+        .role-kladovshchik { background: #f39c12; color: white; }
+        .role-user { background: #95a5a6; color: white; }
         
-        select {
-            padding: 6px 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-overlay.active { display: flex; }
+        .modal-content { background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px; }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; }
+        .close-modal { background: none; border: none; font-size: 24px; cursor: pointer; color: #7f8c8d; }
         
-        .actions { display: flex; gap: 6px; align-items: center; }
+        .form-group { margin-bottom: 1rem; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: 600; color: #555; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
         
-        .info-box {
-            background: #fff3cd;
-            border-left: 4px solid #f39c12;
-            padding: 1rem;
-            border-radius: 6px;
-            margin-bottom: 1.5rem;
-            color: #856404;
-        }
+        .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
     </style>
 </head>
 <body>
-            <header>
-        <a href="dashboard.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: white;">
+    <header>
+        <a href="dashboard.html">
             <img src="icon-192.png" alt="Логотип" style="width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: white; padding: 2px;">
-            <h1 style="margin: 0; font-size: 1.5rem;">HSE Portal</h1>
+            <h1>Управление пользователями</h1>
         </a>
-        <div class="header-actions">
-            <a href="dashboard.html" class="btn btn-secondary">← Назад</a>
-            <button class="btn btn-danger" onclick="handleLogout()">Выход</button>
-        </div>
+        <a href="dashboard.html" class="btn btn-secondary">← Назад</a>
     </header>
 
     <div class="container">
-        <div class="page-header">
-            <h2>Управление пользователями</h2>
+        <div class="top-bar">
+            <h2>Список пользователей</h2>
+            <button class="btn btn-success" onclick="openModal()">➕ Добавить пользователя</button>
         </div>
 
-        <div class="info-box">
-            💡 <strong>Подсказка:</strong> Создание и удаление пользователей выполняется через панель Supabase (Authentication → Users). Здесь вы можете только просматривать список и менять роли.
+        <div class="user-list">
+            <table>
+                <thead>
+                    <tr>
+                        <th>ФИО</th>
+                        <th>Email</th>
+                        <th>Роль</th>
+                        <th>Действия</th>
+                    </tr>
+                </thead>
+                <tbody id="userTableBody">
+                    <tr><td colspan="4" class="empty-state">Загрузка...</td></tr>
+                </tbody>
+            </table>
         </div>
+    </div>
 
-        <table id="users-table">
-            <thead>
-                <tr>
-                    <th>Имя</th>
-                    <th>Email</th>
-                    <th>Роль</th>
-                    <th>Последний вход</th>
-                    <th>Действия</th>
-                </tr>
-            </thead>
-            <tbody id="users-body">
-                <tr><td colspan="5" style="text-align:center; padding:2rem; color:#7f8c8d;">Загрузка...</td></tr>
-            </tbody>
-        </table>
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Добавить пользователя</h3>
+                <button class="close-modal" onclick="closeModal()">&times;</button>
+            </div>
+            <form id="userForm" onsubmit="saveUser(event)">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>ФИО *</label>
+                    <input type="text" id="f_name" required>
+                </div>
+                <div class="form-group">
+                    <label>Email *</label>
+                    <input type="email" id="f_email" required>
+                </div>
+                <div class="form-group">
+                    <label>Роль *</label>
+                    <select id="f_role" required>
+                        <option value="admin">Администратор</option>
+                        <option value="engineer">Специалист по ОТ</option>
+                        <option value="chief_engineer">Директор/Главный инженер</option>
+                        <option value="kladovshchik">Кладовщик</option>
+                        <option value="user">Пользователь</option>
+                    </select>
+                </div>
+                <div class="form-group" id="passwordGroup">
+                    <label>Пароль *</label>
+                    <input type="password" id="f_password" required>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
+                    <button type="submit" class="btn btn-success" id="saveBtn">💾 Сохранить</button>
+                </div>
+            </form>
+        </div>
     </div>
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        let allUsers = [];
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const roleLabels = {
+            'admin': { text: 'Администратор', class: 'role-admin' },
+            'engineer': { text: 'Специалист по ОТ', class: 'role-engineer' },
+            'chief_engineer': { text: 'Директор/Главный инженер', class: 'role-chief' },
+            'kladovshchik': { text: 'Кладовщик', class: 'role-kladovshchik' },
+            'user': { text: 'Пользователь', class: 'role-user' }
+        };
 
-        // Проверка прав доступа
         async function init() {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
-            }
-
+            if (!session) { window.location.href = 'index.html'; return; }
+            
             const role = localStorage.getItem('user_role');
             if (role !== 'admin') {
                 alert('Доступ только для администраторов');
                 window.location.href = 'dashboard.html';
                 return;
             }
-
-            loadUsers();
+            
+            await loadUsers();
+            renderUsers();
         }
 
-        // ✅ ЗАГРУЗКА ПОЛЬЗОВАТЕЛЕЙ (через RPC-функцию)
         async function loadUsers() {
-            const { data, error } = await supabase.rpc('get_all_users');
+            const { data, error } = await supabase.from('profiles').select('*').order('name');
+            if (error) { console.error(error); return; }
+            allUsers = data || [];
+        }
 
-            if (error) {
-                console.error('Ошибка загрузки:', error);
-                document.getElementById('users-body').innerHTML = 
-                    '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#e74c3c;">Ошибка: ' + error.message + '</td></tr>';
+        function renderUsers() {
+            const tbody = document.getElementById('userTableBody');
+            
+            if (allUsers.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Нет пользователей</td></tr>';
                 return;
             }
 
-            const tbody = document.getElementById('users-body');
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding:2rem; color:#7f8c8d;">Нет пользователей</td></tr>';
-                return;
-            }
-
-            const currentUserId = localStorage.getItem('user_id');
-
-            tbody.innerHTML = data.map(user => {
-                const lastSignIn = user.last_sign_in_at 
-                    ? new Date(user.last_sign_in_at).toLocaleString('ru-RU')
-                    : '—';
-                const isSelf = user.id === currentUserId;
-                
+            tbody.innerHTML = allUsers.map(user => {
+                const roleInfo = roleLabels[user.role] || { text: user.role, class: 'role-user' };
                 return `
                     <tr>
-                        <td>${user.full_name || '—'} ${isSelf ? '(вы)' : ''}</td>
+                        <td><strong>${user.name || '—'}</strong></td>
                         <td>${user.email}</td>
+                        <td><span class="role-badge ${roleInfo.class}">${roleInfo.text}</span></td>
                         <td>
-                            <span class="role-badge role-${user.role || 'user'}">
-                                ${getRoleName(user.role)}
-                            </span>
-                        </td>
-                        <td>${lastSignIn}</td>
-                        <td class="actions">
-                            <select onchange="changeRole('${user.id}', this.value)" 
-                                    ${isSelf ? 'disabled' : ''}>
-                                <option value="user" ${user.role === 'user' ? 'selected' : ''}>Пользователь</option>
-                                <option value="engineer" ${user.role === 'engineer' ? 'selected' : ''}>Инженер</option>
-                                <option value="admin" ${user.role === 'admin' ? 'selected' : ''}>Администратор</option>
-                            </select>
+                            <button class="btn btn-primary" onclick="openModal('${user.id}')">✏️</button>
                         </td>
                     </tr>
                 `;
             }).join('');
         }
 
-        function getRoleName(role) {
-            const names = {
-                admin: 'Админ',
-                engineer: 'Инженер',
-                user: 'Пользователь'
-            };
-            return names[role] || 'Пользователь';
-        }
-
-        // Смена роли
-        window.changeRole = async function(userId, newRole) {
-            if (!confirm(`Сменить роль на "${getRoleName(newRole)}"?`)) {
-                loadUsers();
-                return;
-            }
+        window.openModal = function(userId) {
+            const form = document.getElementById('userForm');
+            form.reset();
+            document.getElementById('editUserId').value = '';
+            document.getElementById('passwordGroup').style.display = 'block';
+            document.getElementById('f_password').required = true;
             
-            const { error } = await supabase.rpc('update_user_role', {
-                target_user_id: userId,
-                new_role: newRole
-            });
-
-            if (error) {
-                alert('Ошибка: ' + error.message);
+            if (userId) {
+                const user = allUsers.find(u => u.id === userId);
+                if (!user) return;
+                document.getElementById('editUserId').value = userId;
+                document.getElementById('modalTitle').textContent = 'Редактировать пользователя';
+                document.getElementById('f_name').value = user.name || '';
+                document.getElementById('f_email').value = user.email || '';
+                document.getElementById('f_role').value = user.role || 'user';
+                document.getElementById('f_password').required = false;
+                document.getElementById('passwordGroup').style.display = 'none';
             } else {
-                loadUsers();
+                document.getElementById('modalTitle').textContent = 'Добавить пользователя';
             }
+            document.getElementById('modal').classList.add('active');
         };
 
-        window.handleLogout = async function() {
-            await supabase.auth.signOut();
-            localStorage.clear();
-            window.location.href = 'index.html';
+        window.closeModal = function() {
+            document.getElementById('modal').classList.remove('active');
+        };
+
+        window.saveUser = async function(e) {
+            e.preventDefault();
+            const userId = document.getElementById('editUserId').value;
+            const name = document.getElementById('f_name').value.trim();
+            const email = document.getElementById('f_email').value.trim();
+            const role = document.getElementById('f_role').value;
+            const password = document.getElementById('f_password').value;
+
+            const btn = document.getElementById('saveBtn');
+            btn.disabled = true;
+            btn.textContent = 'Сохранение...';
+
+            try {
+                if (userId) {
+                    // Обновление существующего пользователя
+                    const { error } = await supabase.from('profiles').update({ name, role }).eq('id', userId);
+                    if (error) throw error;
+                } else {
+                    // Создание нового пользователя через Supabase Auth
+                    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+                        email,
+                        password,
+                        email_confirm: true
+                    });
+                    if (authError) throw authError;
+
+                    // Добавление в таблицу profiles
+                    const { error: profileError } = await supabase.from('profiles').insert({
+                        id: authData.user.id,
+                        name,
+                        email,
+                        role
+                    });
+                    if (profileError) throw profileError;
+                }
+
+                closeModal();
+                await loadUsers();
+                renderUsers();
+            } catch (error) {
+                alert('Ошибка: ' + error.message);
+            }
+
+            btn.disabled = false;
+            btn.textContent = '💾 Сохранить';
         };
 
         init();
