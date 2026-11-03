@@ -233,46 +233,60 @@
         };
 
         window.saveUser = async function(e) {
-            e.preventDefault();
-            const userId = document.getElementById('editUserId').value;
-            const name = document.getElementById('f_name').value.trim();
-            const role = document.getElementById('f_role').value;
-            const uuidInput = document.getElementById('f_uuid');
+    e.preventDefault();
+    const userId = document.getElementById('editUserId').value;
+    const name = document.getElementById('f_name').value.trim();
+    const role = document.getElementById('f_role').value;
+    const uuidInput = document.getElementById('f_uuid');
 
-            const btn = document.getElementById('saveBtn');
-            btn.disabled = true;
-            btn.textContent = 'Сохранение...';
+    const btn = document.getElementById('saveBtn');
+    btn.disabled = true;
+    btn.textContent = 'Сохранение...';
 
-            try {
-                if (userId) {
-                    // Обновление существующего профиля
-                    const { error } = await supabase.from('profiles').update({ name, role }).eq('id', userId);
-                    if (error) throw error;
-                } else {
-                    // Создание новой записи в profiles по UUID
-                    const uuid = uuidInput.value.trim();
-                    if (!uuid || uuid.length < 36) {
-                        throw new Error('Некорректный UUID. Скопируйте его из Supabase Dashboard.');
-                    }
-                    
-                    const { error } = await supabase.from('profiles').insert({
-                        id: uuid,
-                        name,
-                        role
-                    });
-                    if (error) throw error;
-                }
+    try {
+        if (userId) {
+            // 1. Сначала получаем текущие данные, чтобы не потерять email
+            const { data: currentUser, error: fetchError } = await supabase
+                .from('profiles')
+                .select('email')
+                .eq('id', userId)
+                .single();
+            
+            if (fetchError) throw new Error('Не удалось загрузить текущие данные: ' + fetchError.message);
 
-                closeModal();
-                await loadUsers();
-                renderUsers();
-            } catch (error) {
-                alert('Ошибка: ' + error.message);
-            } finally {
-                btn.disabled = false;
-                btn.textContent = '💾 Сохранить';
+            // 2. Обновляем, сохраняя существующий email
+            const { error } = await supabase.from('profiles').update({ 
+                name, 
+                role, 
+                email: currentUser.email // Обязательно передаём email обратно!
+            }).eq('id', userId);
+            
+            if (error) throw error;
+        } else {
+            // Создание новой записи
+            const uuid = uuidInput.value.trim();
+            if (!uuid || uuid.length < 36) {
+                throw new Error('Некорректный UUID. Скопируйте его из Supabase Dashboard.');
             }
-        };
+            
+            const { error } = await supabase.from('profiles').insert({
+                id: uuid,
+                name,
+                role
+            });
+            if (error) throw error;
+        }
+
+        closeModal();
+        await loadUsers();
+        renderUsers();
+    } catch (error) {
+        alert('Ошибка: ' + error.message);
+    } finally {
+        btn.disabled = false;
+        btn.textContent = '💾 Сохранить';
+    }
+};
 
         init();
     </script>
