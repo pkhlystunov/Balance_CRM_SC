@@ -149,6 +149,11 @@
             .filter-row { flex-direction: column; align-items: stretch; }
             .filter-group input, .filter-group select { min-width: 100%; }
         }
+                /* Скрытие кнопок редактирования для режима "только чтение" */
+        .read-only-mode .btn-primary,
+        .read-only-mode .btn-success {
+            display: none !important;
+        }
     </style>
 </head>
 <body>
@@ -311,14 +316,32 @@
         let allData = [];
         const WARNING_DAYS_BEFORE_EXPIRY = 60;
 
-        async function init() {
+                async function init() {
             const { data: { session } } = await supabase.auth.getSession();
-            if (!session) { window.location.href = 'index.html'; return; }
+            if (!session) { 
+                window.location.href = 'index.html'; 
+                return; 
+            }
 
             const role = localStorage.getItem('user_role');
-            if (role !== 'admin' && role !== 'engineer') {
-                alert('Доступ только для администраторов и инженеров');
-                window.location.href = 'dashboard.html'; return;
+            
+            // Разрешаем доступ admin, engineer, chief_engineer и kladovshchik
+            const allowedRoles = ['admin', 'engineer', 'chief_engineer', 'kladovshchik'];
+            if (!allowedRoles.includes(role)) {
+                alert('У вас нет доступа к этому разделу');
+                window.location.href = 'dashboard.html'; 
+                return;
+            }
+
+            // 1. Показываем кнопку добавления только для admin и engineer
+            if (role === 'admin' || role === 'engineer') {
+                const btnAdd = document.getElementById('btnAddEmployee');
+                if (btnAdd) btnAdd.style.display = 'inline-block';
+            }
+
+            // 2. Включаем режим "только чтение" для chief_engineer (скрывает кнопки ✏️ и ➕)
+            if (role === 'chief_engineer') {
+                document.body.classList.add('read-only-mode');
             }
 
             await loadData();
