@@ -131,58 +131,58 @@
     </div>
 
     <script type="module">
-        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
-        
-        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
+    
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        async function init() {
-            console.log('🔍 Инициализация dashboard...');
-            
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) {
-                window.location.href = 'index.html';
-                return;
-            }
-
-            const role = localStorage.getItem('user_role');
-            const userName = localStorage.getItem('user_name');
-            
-            console.log('Роль:', role, 'Имя:', userName);
-
-            document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || '?'})`;
-
-            if (role === 'admin' || role === 'engineer') {
-                const ids = ['card-control', 'card-analytics', 'card-siz', 'card-personnel'];
-                ids.forEach(id => {
-                    const el = document.getElementById(id);
-                    if (el) {
-                        el.style.display = 'block';
-                        console.log(`✅ Показана плитка: ${id}`);
-                    } else {
-                        console.error(`❌ Элемент ${id} не найден в HTML!`);
-                    }
-                });
-            } else {
-                console.log('⚠️ Обычный пользователь, скрытые плитки остаются скрытыми');
-            }
-
-            if (role === 'admin') {
-                const btnUsers = document.getElementById('btn-users');
-                if (btnUsers) {
-                    btnUsers.style.display = 'inline-block';
-                    console.log('✅ Показана кнопка "Пользователи"');
-                }
-            }
+    async function init() {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            window.location.href = 'index.html';
+            return;
         }
 
-        window.handleLogout = async function() {
-            await supabase.auth.signOut();
-            localStorage.clear();
-            window.location.href = 'index.html';
-        };
+        const role = localStorage.getItem('user_role');
+        const userName = localStorage.getItem('user_name');
 
-        init();
-    </script>
+        document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || '?'})`;
+
+        // Скрываем все плитки сначала
+        const allCards = ['card-control', 'card-analytics', 'card-siz', 'card-personnel'];
+        allCards.forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.style.display = 'none';
+        });
+
+        // Показываем плитки в зависимости от роли
+        if (role === 'admin' || role === 'engineer' || role === 'chief_engineer') {
+            // Эти роли видят все плитки
+            allCards.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'block';
+            });
+        } else if (role === 'kladovshchik') {
+            // Кладовщик видит только СИЗ
+            const cardSiz = document.getElementById('card-siz');
+            if (cardSiz) cardSiz.style.display = 'block';
+        }
+        // user видит только тестирование (оно и так видимо всем)
+
+        // Кнопка "Пользователи" только для админов
+        if (role === 'admin') {
+            const btnUsers = document.getElementById('btn-users');
+            if (btnUsers) btnUsers.style.display = 'inline-block';
+        }
+    }
+
+    window.handleLogout = async function() {
+        await supabase.auth.signOut();
+        localStorage.clear();
+        window.location.href = 'index.html';
+    };
+
+    init();
+</script>
 </body>
 </html>
