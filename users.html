@@ -54,6 +54,7 @@
         .form-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 1.5rem; }
         
         .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
+        .hint { font-size: 12px; color: #7f8c8d; margin-top: 4px; }
     </style>
 </head>
 <body>
@@ -96,13 +97,21 @@
             </div>
             <form id="userForm" onsubmit="saveUser(event)">
                 <input type="hidden" id="editUserId">
+                
+                <!-- Поле для UUID появляется только при создании нового пользователя -->
+                <div class="form-group" id="uuidGroup" style="display: none;">
+                    <label>ID пользователя (UUID из Supabase Auth) *</label>
+                    <input type="text" id="f_uuid" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx">
+                    <div class="hint">Зайдите в Supabase → Authentication → Users, скопируйте ID созданного пользователя.</div>
+                </div>
+
                 <div class="form-group">
                     <label>ФИО *</label>
                     <input type="text" id="f_name" required>
                 </div>
                 <div class="form-group">
-                    <label>Email *</label>
-                    <input type="email" id="f_email" required>
+                    <label>Email (для отображения)</label>
+                    <input type="email" id="f_email" readonly style="background: #f4f6f9; cursor: not-allowed;">
                 </div>
                 <div class="form-group">
                     <label>Роль *</label>
@@ -114,10 +123,7 @@
                         <option value="user">Пользователь</option>
                     </select>
                 </div>
-                <div class="form-group" id="passwordGroup">
-                    <label>Пароль *</label>
-                    <input type="password" id="f_password" required>
-                </div>
+                
                 <div class="form-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeModal()">Отмена</button>
                     <button type="submit" class="btn btn-success" id="saveBtn">💾 Сохранить</button>
@@ -136,7 +142,7 @@
         const roleLabels = {
             'admin': { text: 'Администратор', class: 'role-admin' },
             'engineer': { text: 'Специалист по ОТ', class: 'role-engineer' },
-            'chief_engineer': { text: 'Директор/Главный инженер', class: 'role-chief' },
+            'chief_engineer': { text: 'Директор/Гл. инженер', class: 'role-chief' },
             'kladovshchik': { text: 'Кладовщик', class: 'role-kladovshchik' },
             'user': { text: 'Пользователь', class: 'role-user' }
         };
@@ -157,8 +163,13 @@
         }
 
         async function loadUsers() {
+            // Загружаем профили вместе с данными аутентификации
             const { data, error } = await supabase.from('profiles').select('*').order('name');
-            if (error) { console.error(error); return; }
+            if (error) { 
+                console.error(error); 
+                document.getElementById('userTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Ошибка загрузки: ' + error.message + '</td></tr>';
+                return; 
+            }
             allUsers = data || [];
         }
 
@@ -166,7 +177,7 @@
             const tbody = document.getElementById('userTableBody');
             
             if (allUsers.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Нет пользователей</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="4" class="empty-state">Нет пользователей. Сначала создайте их в Supabase Dashboard.</td></tr>';
                 return;
             }
 
@@ -175,7 +186,7 @@
                 return `
                     <tr>
                         <td><strong>${user.name || '—'}</strong></td>
-                        <td>${user.email}</td>
+                        <td>${user.email || '—'}</td>
                         <td><span class="role-badge ${roleInfo.class}">${roleInfo.text}</span></td>
                         <td>
                             <button class="btn btn-primary" onclick="openModal('${user.id}')">✏️</button>
@@ -189,21 +200,24 @@
             const form = document.getElementById('userForm');
             form.reset();
             document.getElementById('editUserId').value = '';
-            document.getElementById('passwordGroup').style.display = 'block';
-            document.getElementById('f_password').required = true;
+            document.getElementById('uuidGroup').style.display = 'none';
             
             if (userId) {
+                // Режим редактирования
                 const user = allUsers.find(u => u.id === userId);
                 if (!user) return;
+                
                 document.getElementById('editUserId').value = userId;
                 document.getElementById('modalTitle').textContent = 'Редактировать пользователя';
                 document.getElementById('f_name').value = user.name || '';
                 document.getElementById('f_email').value = user.email || '';
                 document.getElementById('f_role').value = user.role || 'user';
-                document.getElementById('f_password').required = false;
-                document.getElementById('passwordGroup').style.display = 'none';
             } else {
+                // Режим создания
                 document.getElementById('modalTitle').textContent = 'Добавить пользователя';
+                document.getElementById('uuidGroup').style.display = 'block';
+                document.getElementById('f_uuid').required = true;
+                document.getElementById('f_email').value = '';
             }
             document.getElementById('modal').classList.add('active');
         };
@@ -216,9 +230,8 @@
             e.preventDefault();
             const userId = document.getElementById('editUserId').value;
             const name = document.getElementById('f_name').value.trim();
-            const email = document.getElementById('f_email').value.trim();
             const role = document.getElementById('f_role').value;
-            const password = document.getElementById('f_password').value;
+            const uuidInput = document.getElementById('f_uuid');
 
             const btn = document.getElementById('saveBtn');
             btn.disabled = true;
@@ -226,26 +239,22 @@
 
             try {
                 if (userId) {
-                    // Обновление существующего пользователя
+                    // Обновление существующего профиля
                     const { error } = await supabase.from('profiles').update({ name, role }).eq('id', userId);
                     if (error) throw error;
                 } else {
-                    // Создание нового пользователя через Supabase Auth
-                    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
-                        email,
-                        password,
-                        email_confirm: true
-                    });
-                    if (authError) throw authError;
-
-                    // Добавление в таблицу profiles
-                    const { error: profileError } = await supabase.from('profiles').insert({
-                        id: authData.user.id,
+                    // Создание новой записи в profiles по UUID
+                    const uuid = uuidInput.value.trim();
+                    if (!uuid || uuid.length < 36) {
+                        throw new Error('Некорректный UUID. Скопируйте его из Supabase Dashboard.');
+                    }
+                    
+                    const { error } = await supabase.from('profiles').insert({
+                        id: uuid,
                         name,
-                        email,
                         role
                     });
-                    if (profileError) throw profileError;
+                    if (error) throw error;
                 }
 
                 closeModal();
@@ -253,10 +262,10 @@
                 renderUsers();
             } catch (error) {
                 alert('Ошибка: ' + error.message);
+            } finally {
+                btn.disabled = false;
+                btn.textContent = '💾 Сохранить';
             }
-
-            btn.disabled = false;
-            btn.textContent = '💾 Сохранить';
         };
 
         init();
