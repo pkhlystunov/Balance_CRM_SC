@@ -163,15 +163,21 @@
         }
 
         async function loadUsers() {
-            // Загружаем профили вместе с данными аутентификации
-            const { data, error } = await supabase.from('profiles').select('*').order('name');
-            if (error) { 
-                console.error(error); 
-                document.getElementById('userTableBody').innerHTML = '<tr><td colspan="4" class="empty-state">Ошибка загрузки: ' + error.message + '</td></tr>';
-                return; 
-            }
-            allUsers = data || [];
-        }
+    const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .order('name');
+    
+    if (error) { 
+        console.error('Ошибка загрузки:', error);
+        document.getElementById('userTableBody').innerHTML = 
+            '<tr><td colspan="4" class="empty-state">Ошибка: ' + error.message + '</td></tr>';
+        return; 
+    }
+    
+    console.log('Загружено пользователей:', data?.length);
+    allUsers = data || [];
+}
 
         function renderUsers() {
             const tbody = document.getElementById('userTableBody');
