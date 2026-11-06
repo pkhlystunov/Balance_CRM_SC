@@ -255,37 +255,37 @@
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         let allData = [];
 
-                async function init() {
-            const { data: { session } } = await supabase.auth.getSession();
-            if (!session) { 
-                window.location.href = 'index.html'; 
-                return; 
-            }
+        async function init() {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { 
+        window.location.href = 'index.html'; 
+        return; 
+    }
 
-            const role = localStorage.getItem('user_role');
-            
-            // Разрешаем доступ admin, engineer и chief_engineer (кладовщику эта страница не нужна)
-            const allowedRoles = ['admin', 'engineer', 'chief_engineer'];
-            if (!allowedRoles.includes(role)) {
-                alert('У вас нет доступа к этому разделу');
-                window.location.href = 'dashboard.html'; 
-                return;
-            }
+    const role = localStorage.getItem('user_role');
+    
+    // Доступ: admin, engineer, chief_engineer (kladovshchik сюда не допускается)
+    const allowedRoles = ['admin', 'engineer', 'chief_engineer'];
+    if (!allowedRoles.includes(role)) {
+        alert('У вас нет доступа к этому разделу');
+        window.location.href = 'dashboard.html'; 
+        return;
+    }
 
-            // 1. Показываем кнопку добавления только для admin и engineer
-            if (role === 'admin' || role === 'engineer') {
-                const btnAdd = document.getElementById('btnAddEmployee');
-                if (btnAdd) btnAdd.style.display = 'inline-block';
-            }
+    // Показываем кнопку добавления только для admin и engineer
+    if (role === 'admin' || role === 'engineer') {
+        const btnAdd = document.getElementById('btnAddEmployee');
+        if (btnAdd) btnAdd.style.display = 'inline-block';
+    }
 
-            // 2. Включаем режим "только чтение" для chief_engineer
-            if (role === 'chief_engineer') {
-                document.body.classList.add('read-only-mode');
-            }
+    // Режим "только чтение" для chief_engineer
+    if (role === 'chief_engineer') {
+        document.body.classList.add('read-only-mode');
+    }
 
-            await loadData();
-            renderTable();
-        }
+    await loadData();
+    renderTable();
+}
 
         async function loadData() {
             const { data, error } = await supabase.from('employees_training').select('*').order('category').order('full_name');
