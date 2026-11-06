@@ -6,6 +6,7 @@
     <link rel="icon" type="image/png" href="icon-192.png">
     <title>Учет обучения и медосмотров</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
@@ -24,6 +25,8 @@
         .btn-success:hover { background: #229954; }
         .btn-primary { background: #3498db; color: white; }
         .btn-primary:hover { background: #2980b9; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #e67e22; }
         
         .container { padding: 2rem; max-width: 100%; margin: 0 auto; }
         
@@ -85,11 +88,9 @@
         .form-actions { margin-top: 1.5rem; display: flex; justify-content: flex-end; gap: 10px; }
         
         .empty-state { text-align: center; padding: 3rem; color: #7f8c8d; }
-                /* Скрытие кнопок редактирования для режима "только чтение" */
+        
         .read-only-mode .btn-primary,
-        .read-only-mode .btn-success {
-            display: none !important;
-        }
+        .read-only-mode .btn-success { display: none !important; }
     </style>
 </head>
 <body>
@@ -107,7 +108,10 @@
     <div class="container">
         <div class="top-bar">
             <h2>База сотрудников</h2>
-            <button class="btn btn-success" id="btnAddEmployee" onclick="openModal()" style="display: none;">➕ Добавить сотрудника</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-warning" onclick="exportToExcel()">📊 Экспорт в Excel</button>
+                <button class="btn btn-success" id="btnAddEmployee" style="display: none;" onclick="openModal()">➕ Добавить сотрудника</button>
+            </div>
         </div>
 
         <div class="filters">
@@ -256,36 +260,29 @@
         let allData = [];
 
         async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { 
-        window.location.href = 'index.html'; 
-        return; 
-    }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { window.location.href = 'index.html'; return; }
 
-    const role = localStorage.getItem('user_role');
-    
-    // Доступ: admin, engineer, chief_engineer (kladovshchik сюда не допускается)
-    const allowedRoles = ['admin', 'engineer', 'chief_engineer'];
-    if (!allowedRoles.includes(role)) {
-        alert('У вас нет доступа к этому разделу');
-        window.location.href = 'dashboard.html'; 
-        return;
-    }
+            const role = localStorage.getItem('user_role');
+            const allowedRoles = ['admin', 'engineer', 'chief_engineer'];
+            if (!allowedRoles.includes(role)) {
+                alert('У вас нет доступа к этому разделу');
+                window.location.href = 'dashboard.html';
+                return;
+            }
 
-    // Показываем кнопку добавления только для admin и engineer
-    if (role === 'admin' || role === 'engineer') {
-        const btnAdd = document.getElementById('btnAddEmployee');
-        if (btnAdd) btnAdd.style.display = 'inline-block';
-    }
+            if (role === 'admin' || role === 'engineer') {
+                const btnAdd = document.getElementById('btnAddEmployee');
+                if (btnAdd) btnAdd.style.display = 'inline-block';
+            }
 
-    // Режим "только чтение" для chief_engineer
-    if (role === 'chief_engineer') {
-        document.body.classList.add('read-only-mode');
-    }
+            if (role === 'chief_engineer') {
+                document.body.classList.add('read-only-mode');
+            }
 
-    await loadData();
-    renderTable();
-}
+            await loadData();
+            renderTable();
+        }
 
         async function loadData() {
             const { data, error } = await supabase.from('employees_training').select('*').order('category').order('full_name');
@@ -436,6 +433,79 @@
             else { closeModal(); await loadData(); renderTable(); }
             
             btn.disabled = false; btn.textContent = '💾 Сохранить';
+        };
+
+        // Экспорт в Excel
+        window.exportToExcel = function() {
+            const filtered = getFilteredData();
+            
+            if (filtered.length === 0) {
+                alert('Нет данных для экспорта');
+                return;
+            }
+
+            const data = filtered.map(row => ({
+                'Категория': row.category || '',
+                'ФИО': row.full_name || '',
+                'Должность': row.position || '',
+                'Дата приёма': row.hire_date || '',
+                'Статус': row.status || '',
+                'МО дата': row.mo_date || '',
+                'МО до': row.mo_valid || '',
+                'ОПО дата': row.opo_date || '',
+                'ОПО до': row.opo_valid || '',
+                'ОТ(А) дата': row.ot_a_date || '',
+                'ОТ(А) до': row.ot_a_valid || '',
+                'ОТ(рук) дата': row.ot_ruk_date || '',
+                'ОТ(рук) до': row.ot_ruk_valid || '',
+                'ОТ(Б) дата': row.ot_b_date || '',
+                'ОТ(Б) до': row.ot_b_valid || '',
+                'ОТ(В) дата': row.ot_v_date || '',
+                'ОТ(В) до': row.ot_v_valid || '',
+                'РПО ОТ(В) дата': row.rpo_ot_v_date || '',
+                'РПО ОТ(В) до': row.rpo_ot_v_valid || '',
+                'Удост. проф. дата': row.udost_prof_date || '',
+                'Удост. проф. до': row.udost_prof_valid || '',
+                'ПП дата': row.pp_date || '',
+                'ПП до': row.pp_valid || '',
+                'СИЗ ОТ дата': row.siz_ot_date || '',
+                'СИЗ ОТ до': row.siz_ot_valid || '',
+                'ПТМ дата': row.ptm_date || '',
+                'ПТМ до': row.ptm_valid || '',
+                'ПожБез дата': row.pozhbez_date || '',
+                'ПожБез до': row.pozhbez_valid || '',
+                'ПожБез журнал': row.pozhbez_journal || '',
+                'А1 дата': row.a1_date || '',
+                'А1 до': row.a1_valid || '',
+                'Б.9.31 дата': row.b931_date || '',
+                'Б.9.31 до': row.b931_valid || '',
+                'ЭБ Г.1 дата': row.eb_g1_date || '',
+                'ЭБ Г.1 до': row.eb_g1_valid || '',
+                'ГАЗ Б.7 дата': row.gaz_b7_date || '',
+                'ГАЗ Б.7 до': row.gaz_b7_valid || '',
+                'ТЕПЛО Г.2 дата': row.teplo_g2_date || '',
+                'ТЕПЛО Г.2 до': row.teplo_g2_valid || ''
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Сотрудники');
+            
+            ws['!cols'] = [
+                { wch: 12 }, { wch: 35 }, { wch: 45 }, { wch: 12 }, { wch: 10 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 15 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }, { wch: 12 }, { wch: 12 },
+                { wch: 12 }, { wch: 12 }
+            ];
+
+            const fileName = `Обучение_сотрудников_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
         };
 
         ['filterName', 'filterCategory', 'filterStatus'].forEach(id => {
