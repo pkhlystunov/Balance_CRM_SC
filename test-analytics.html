@@ -6,6 +6,7 @@
     <link rel="icon" type="image/png" href="icon-192.png">
     <title>Аналитика тестирования</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * {
             margin: 0;
@@ -42,12 +43,24 @@
         .btn-secondary:hover { background: #7f8c8d; }
         .btn-danger { background: #e74c3c; color: white; }
         .btn-danger:hover { background: #c0392b; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #e67e22; }
         
         .container {
             padding: 2rem;
             max-width: 1200px;
             margin: 0 auto;
         }
+        
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1.5rem;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        .top-bar h2 { color: #2c3e50; }
         
         .filters {
             background: white;
@@ -227,7 +240,7 @@
     </style>
 </head>
 <body>
-        <header>
+    <header>
         <a href="dashboard.html" style="display: flex; align-items: center; gap: 12px; text-decoration: none; color: white;">
             <img src="icon-192.png" alt="Логотип" style="width: 40px; height: 40px; border-radius: 6px; object-fit: contain; background: white; padding: 2px;">
             <h1 style="margin: 0; font-size: 1.5rem;">HSE Portal</h1>
@@ -239,6 +252,11 @@
     </header>
 
     <div class="container">
+        <div class="top-bar">
+            <h2>Результаты тестирования сотрудников</h2>
+            <button class="btn btn-warning" onclick="exportToExcel()">📊 Экспорт в Excel</button>
+        </div>
+
         <div class="filters">
             <h3>Фильтры</h3>
             <div class="filter-row">
@@ -297,10 +315,7 @@
 
     <script type="module">
         import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-        
-        // ⚠️ ЗАМЕНИТЕ НА ВАШИ ЗНАЧЕНИЯ
-        const SUPABASE_URL = 'https://xtvfliynzoqscbfsdejj.supabase.co';
-        const SUPABASE_ANON_KEY = 'sb_publishable_uxBZs58SElYaGbYBB0dyTw_pEHo8Z0s';
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
         
         const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
@@ -484,6 +499,37 @@
                 list.appendChild(item);
             });
         }
+
+        // Экспорт в Excel
+        window.exportToExcel = function() {
+            const filtered = getFilteredResults();
+            
+            if (filtered.length === 0) {
+                alert('Нет данных для экспорта. Сначала примените фильтры.');
+                return;
+            }
+
+            const data = filtered.map(r => ({
+                'ФИО': r.employee_name || '',
+                'Название теста': r.test_programs?.name || '',
+                'Дата прохождения': new Date(r.test_date).toLocaleDateString('ru-RU'),
+                'Баллы': `${r.score}/${r.total_questions}`,
+                'Процент': `${r.percentage}%`,
+                'Результат': r.passed ? 'Прошёл' : 'Не прошёл'
+            }));
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Результаты тестов');
+            
+            ws['!cols'] = [
+                { wch: 35 }, { wch: 40 }, { wch: 18 }, 
+                { wch: 12 }, { wch: 10 }, { wch: 15 }
+            ];
+
+            const fileName = `Аналитика_тестирования_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        };
 
         // Настройка фильтров
         function setupFilters() {
