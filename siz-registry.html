@@ -6,6 +6,7 @@
     <link rel="icon" type="image/png" href="icon-192.png">
     <title>Реестр выдачи СИЗ</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f4f6f9; min-height: 100vh; }
@@ -24,6 +25,8 @@
         .btn-success:hover { background: #229954; }
         .btn-primary { background: #3498db; color: white; }
         .btn-primary:hover { background: #2980b9; }
+        .btn-warning { background: #f39c12; color: white; }
+        .btn-warning:hover { background: #e67e22; }
         .btn-sm { padding: 4px 8px; font-size: 12px; }
         
         .container { padding: 2rem; max-width: 100%; margin: 0 auto; }
@@ -83,14 +86,14 @@
         
         tr:hover { background: #f8f9fa; }
         
-        /* Специальные ширины для колонок */
+        /* Специальные ширины для колонок (ОБУВЬ И РОСТ ПОМЕНЯНЫ МЕСТАМИ) */
         th:nth-child(1), td:nth-child(1) { width: 8%; }
         th:nth-child(2), td:nth-child(2) { width: 15%; }
         th:nth-child(3), td:nth-child(3) { width: 12%; }
         th:nth-child(4), td:nth-child(4) { width: 12%; }
         th:nth-child(5), td:nth-child(5) { width: 6%; }
-        th:nth-child(6), td:nth-child(6) { width: 6%; }
-        th:nth-child(7), td:nth-child(7) { width: 5%; }
+        th:nth-child(6), td:nth-child(6) { width: 5%; } /* РОСТ */
+        th:nth-child(7), td:nth-child(7) { width: 6%; } /* ОБУВЬ */
         th:nth-child(8), td:nth-child(8) { width: 8%; }
         th:nth-child(9), td:nth-child(9) { width: 8%; }
         th:nth-child(10), td:nth-child(10) { width: 8%; }
@@ -171,7 +174,10 @@
     <div class="container">
         <div class="top-bar">
             <h2>Учёт и контроль сроков носки</h2>
-            <button class="btn btn-success" id="btnAddEmployee" onclick="openModal('add')" style="display: none;">➕ Добавить сотрудника</button>
+            <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                <button class="btn btn-warning" onclick="exportToExcel()">📊 Экспорт в Excel</button>
+                <button class="btn btn-success" id="btnAddEmployee" onclick="openModal('add')" style="display: none;">➕ Добавить сотрудника</button>
+            </div>
         </div>
 
         <div class="filters">
@@ -217,8 +223,8 @@
                         <th>Должность</th>
                         <th>Организация</th>
                         <th>Одежда</th>
-                        <th>Обувь</th>
-                        <th>Рост</th>
+                        <th>Рост</th> <!-- ПОМЕНЯНО МЕСТАМИ -->
+                        <th>Обувь</th> <!-- ПОМЕНЯНО МЕСТАМИ -->
                         <th>Лето</th>
                         <th>Статус</th>
                         <th>Зима</th>
@@ -271,12 +277,12 @@
                         <input type="text" id="f_clothing_size" placeholder="48-50">
                     </div>
                     <div class="form-group">
-                        <label>Размер обуви</label>
-                        <input type="text" id="f_shoe_size" placeholder="42">
+                        <label>Рост</label> <!-- ПОМЕНЯНО МЕСТАМИ -->
+                        <input type="text" id="f_height" placeholder="175">
                     </div>
                     <div class="form-group">
-                        <label>Рост</label>
-                        <input type="text" id="f_height" placeholder="175">
+                        <label>Размер обуви</label> <!-- ПОМЕНЯНО МЕСТАМИ -->
+                        <input type="text" id="f_shoe_size" placeholder="42">
                     </div>
                     <div class="form-group">
                         <label>Получение Лето</label>
@@ -317,38 +323,38 @@
         const WARNING_DAYS_BEFORE_EXPIRY = 60;
 
         async function init() {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session) { 
-        window.location.href = 'index.html'; 
-        return; 
-    }
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) { 
+                window.location.href = 'index.html'; 
+                return; 
+            }
 
-    const role = localStorage.getItem('user_role');
-    
-    // Разрешаем доступ: admin, engineer, chief_engineer (просмотр), kladovshchik (полный доступ к СИЗ)
-    const allowedRoles = ['admin', 'engineer', 'chief_engineer', 'kladovshchik'];
-    if (!allowedRoles.includes(role)) {
-        alert('У вас нет доступа к этому разделу');
-        window.location.href = 'dashboard.html'; 
-        return;
-    }
+            const role = localStorage.getItem('user_role');
+            
+            // Разрешаем доступ: admin, engineer, chief_engineer (просмотр), kladovshchik (полный доступ к СИЗ)
+            const allowedRoles = ['admin', 'engineer', 'chief_engineer', 'kladovshchik'];
+            if (!allowedRoles.includes(role)) {
+                alert('У вас нет доступа к этому разделу');
+                window.location.href = 'dashboard.html'; 
+                return;
+            }
 
-    // Показываем кнопку добавления для admin, engineer и kladovshchik
-    // chief_engineer видит только данные, без кнопок редактирования
-    if (role === 'admin' || role === 'engineer' || role === 'kladovshchik') {
-        const btnAdd = document.getElementById('btnAddEmployee');
-        if (btnAdd) btnAdd.style.display = 'inline-block';
-    }
+            // Показываем кнопку добавления для admin, engineer и kladovshchik
+            // chief_engineer видит только данные, без кнопок редактирования
+            if (role === 'admin' || role === 'engineer' || role === 'kladovshchik') {
+                const btnAdd = document.getElementById('btnAddEmployee');
+                if (btnAdd) btnAdd.style.display = 'inline-block';
+            }
 
-    // Режим "только чтение" для chief_engineer (скрывает кнопки ✏️ и ➕)
-    if (role === 'chief_engineer') {
-        document.body.classList.add('read-only-mode');
-    }
+            // Режим "только чтение" для chief_engineer (скрывает кнопки ✏️ и ➕)
+            if (role === 'chief_engineer') {
+                document.body.classList.add('read-only-mode');
+            }
 
-    await loadData();
-    populateFilters();
-    renderTable();
-}
+            await loadData();
+            populateFilters();
+            renderTable();
+        }
 
         async function loadData() {
             const { data, error } = await supabase.from('employees_siz').select('*').order('full_name');
@@ -493,8 +499,8 @@
                         <td>${row.position || '—'}</td>
                         <td>${row.organization || '—'}</td>
                         <td>${row.clothing_size || '—'}</td>
-                        <td>${row.shoe_size || '—'}</td>
-                        <td>${row.height || '—'}</td>
+                        <td>${row.height || '—'}</td> <!-- ПОМЕНЯНО МЕСТАМИ -->
+                        <td>${row.shoe_size || '—'}</td> <!-- ПОМЕНЯНО МЕСТАМИ -->
                         <td>${row.summer_issue_date || '—'}</td>
                         <td><span class="status-badge ${sSummer.class}">${sSummer.label}</span></td>
                         <td>${row.winter_issue_date || '—'}</td>
@@ -510,6 +516,51 @@
                 `;
             }).join('');
         }
+
+        // Экспорт в Excel
+        window.exportToExcel = function() {
+            const filtered = getFilteredData();
+            
+            if (filtered.length === 0) {
+                alert('Нет данных для экспорта');
+                return;
+            }
+
+            const data = filtered.map(row => {
+                const sSummer = getSizStatus(row.summer_issue_date, 'summer');
+                const sWinter = getSizStatus(row.winter_issue_date, 'winter');
+                
+                return {
+                    'Категория': row.category || '',
+                    'ФИО': row.full_name || '',
+                    'Должность': row.position || '',
+                    'Организация': row.organization || '',
+                    'Дата приема': row.hire_date || '',
+                    'Размер одежды': row.clothing_size || '',
+                    'Рост': row.height || '', // ПОМЕНЯНО МЕСТАМИ
+                    'Размер обуви': row.shoe_size || '', // ПОМЕНЯНО МЕСТАМИ
+                    'Получение Лето': row.summer_issue_date || '',
+                    'Статус Лето': sSummer.label,
+                    'Получение Зима': row.winter_issue_date || '',
+                    'Статус Зима': sWinter.label,
+                    'Статус сотрудника': row.status || '',
+                    'Комментарии': row.comments || ''
+                };
+            });
+
+            const ws = XLSX.utils.json_to_sheet(data);
+            const wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, 'Реестр СИЗ');
+            
+            ws['!cols'] = [
+                { wch: 12 }, { wch: 35 }, { wch: 30 }, { wch: 20 }, { wch: 14 },
+                { wch: 8 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 15 },
+                { wch: 14 }, { wch: 15 }, { wch: 12 }, { wch: 40 }
+            ];
+
+            const fileName = `Реестр_СИЗ_${new Date().toISOString().slice(0,10)}.xlsx`;
+            XLSX.writeFile(wb, fileName);
+        };
 
         // --- МОДАЛЬНОЕ ОКНО ---
         window.openModal = function(mode, id = null) {
@@ -531,8 +582,8 @@
                     document.getElementById('f_organization').value = row.organization || '';
                     document.getElementById('f_hire_date').value = row.hire_date || '';
                     document.getElementById('f_clothing_size').value = row.clothing_size || '';
-                    document.getElementById('f_shoe_size').value = row.shoe_size || '';
-                    document.getElementById('f_height').value = row.height || '';
+                    document.getElementById('f_height').value = row.height || ''; // ПОМЕНЯНО МЕСТАМИ
+                    document.getElementById('f_shoe_size').value = row.shoe_size || ''; // ПОМЕНЯНО МЕСТАМИ
                     document.getElementById('f_summer_issue_date').value = row.summer_issue_date || '';
                     document.getElementById('f_winter_issue_date').value = row.winter_issue_date || '';
                     document.getElementById('f_status').value = row.status || 'Активен';
@@ -567,8 +618,8 @@
                 organization: document.getElementById('f_organization').value.trim(),
                 hire_date: document.getElementById('f_hire_date').value.trim(),
                 clothing_size: document.getElementById('f_clothing_size').value.trim(),
-                shoe_size: document.getElementById('f_shoe_size').value.trim(),
-                height: document.getElementById('f_height').value.trim(),
+                height: document.getElementById('f_height').value.trim(), // ПОМЕНЯНО МЕСТАМИ
+                shoe_size: document.getElementById('f_shoe_size').value.trim(), // ПОМЕНЯНО МЕСТАМИ
                 summer_issue_date: document.getElementById('f_summer_issue_date').value.trim(),
                 winter_issue_date: document.getElementById('f_winter_issue_date').value.trim(),
                 status: document.getElementById('f_status').value,
