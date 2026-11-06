@@ -64,6 +64,38 @@
         .placeholder-card:hover {
             transform: none; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border-color: #bdc3c7;
         }
+        
+        /* Колокольчик уведомлений */
+        .notif-link {
+            position: relative;
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            color: white;
+            font-size: 1.4rem;
+            padding: 6px 10px;
+            border-radius: 6px;
+            transition: background 0.3s;
+        }
+        .notif-link:hover { background: rgba(255,255,255,0.15); }
+        .notif-badge {
+            position: absolute;
+            top: -4px;
+            right: -4px;
+            background: #e74c3c;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            border: 2px solid #2c3e50;
+        }
+        .notif-badge.show { display: flex; }
     </style>
 </head>
 <body>
@@ -74,6 +106,13 @@
         </a>
         <div class="user-info">
             <span id="user-name">Загрузка...</span>
+            
+            <!-- Колокольчик уведомлений -->
+            <a href="notifications.html" class="notif-link" id="notif-link" title="Уведомления">
+                🔔
+                <span id="notif-badge" class="notif-badge">0</span>
+            </a>
+            
             <a href="users.html" class="btn-users" id="btn-users">👥 Пользователи</a>
             <button class="btn-logout" onclick="handleLogout()">Выход</button>
         </div>
@@ -122,6 +161,12 @@
                 <p>База данных сотрудников, контроль сроков медосмотров, обучения по ОТ, ПБ и ПромБез.</p>
             </a>
 
+            <a href="sout-opr.html" class="card admin-only" id="card-sout-opr">
+                <div class="card-icon">📋</div>
+                <h3>СОУТ и ОПР</h3>
+                <p>Специальная оценка условий труда и оценка профессиональных рисков по компаниям.</p>
+            </a>
+
             <div class="card placeholder-card">
                 <div class="card-icon">➕</div>
                 <h3>Добавить сервис</h3>
@@ -131,58 +176,95 @@
     </div>
 
     <script type="module">
-    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
-    import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
-    
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+        import { SUPABASE_URL, SUPABASE_ANON_KEY } from './js/config.js';
+        
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-    async function init() {
-        const { data: { session } } = await supabase.auth.getSession();
-        if (!session) {
+        async function loadNotificationBadge() {
+            try {
+                const { count } = await supabase
+                    .from('notifications')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('is_read', false);
+                
+                const badge = document.getElementById('notif-badge');
+                if (badge) {
+                    badge.textContent = count || 0;
+                    if (count && count > 0) {
+                        badge.classList.add('show');
+                    } else {
+                        badge.classList.remove('show');
+                    }
+                }
+            } catch(e) { 
+                console.log('Badge error:', e); 
+            }
+        }
+
+        async function init() {
+            console.log('🔍 Инициализация dashboard...');
+            
+            const { data: { session } } = await supabase.auth.getSession();
+            if (!session) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            const role = localStorage.getItem('user_role');
+            const userName = localStorage.getItem('user_name');
+            
+            console.log('Роль:', role, 'Имя:', userName);
+
+            document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || '?'})`;
+
+            const ids = ['card-control', 'card-analytics', 'card-siz', 'card-personnel', 'card-sout-opr'];
+
+            if (role === 'admin' || role === 'engineer' || role === 'chief_engineer') {
+                ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.style.display = 'block';
+                        console.log(`✅ Показана плитка: ${id}`);
+                    }
+                });
+            } else if (role === 'kladovshchik') {
+                const cardSiz = document.getElementById('card-siz');
+                if (cardSiz) cardSiz.style.display = 'block';
+            }
+
+            if (role === 'admin') {
+                const btnUsers = document.getElementById('btn-users');
+                if (btnUsers) {
+                    btnUsers.style.display = 'inline-block';
+                    console.log('✅ Показана кнопка "Пользователи"');
+                }
+            }
+
+            // Загрузка бейджа уведомлений
+            await loadNotificationBadge();
+            setInterval(loadNotificationBadge, 60000);
+
+            // Генерация уведомлений (только для admin и engineer)
+            if (role === 'admin' || role === 'engineer') {
+                try {
+                    const { generateNotifications } = await import('./js/generate-notifications.js');
+                    const count = await generateNotifications();
+                    console.log(`🔔 Сгенерировано уведомлений: ${count}`);
+                    await loadNotificationBadge();
+                } catch(e) {
+                    console.error('Ошибка генерации уведомлений:', e);
+                }
+            }
+        }
+
+        window.handleLogout = async function() {
+            await supabase.auth.signOut();
+            localStorage.clear();
             window.location.href = 'index.html';
-            return;
-        }
+        };
 
-        const role = localStorage.getItem('user_role');
-        const userName = localStorage.getItem('user_name');
-
-        document.getElementById('user-name').innerText = `👤 ${userName || 'Пользователь'} (${role || '?'})`;
-
-        // Скрываем все плитки сначала
-        const allCards = ['card-control', 'card-analytics', 'card-siz', 'card-personnel'];
-        allCards.forEach(id => {
-            const el = document.getElementById(id);
-            if (el) el.style.display = 'none';
-        });
-
-        // Показываем плитки в зависимости от роли
-        if (role === 'admin' || role === 'engineer' || role === 'chief_engineer') {
-            // Эти роли видят все плитки
-            allCards.forEach(id => {
-                const el = document.getElementById(id);
-                if (el) el.style.display = 'block';
-            });
-        } else if (role === 'kladovshchik') {
-            // Кладовщик видит только СИЗ
-            const cardSiz = document.getElementById('card-siz');
-            if (cardSiz) cardSiz.style.display = 'block';
-        }
-        // user видит только тестирование (оно и так видимо всем)
-
-        // Кнопка "Пользователи" только для админов
-        if (role === 'admin') {
-            const btnUsers = document.getElementById('btn-users');
-            if (btnUsers) btnUsers.style.display = 'inline-block';
-        }
-    }
-
-    window.handleLogout = async function() {
-        await supabase.auth.signOut();
-        localStorage.clear();
-        window.location.href = 'index.html';
-    };
-
-    init();
-</script>
+        init();
+    </script>
 </body>
 </html>
